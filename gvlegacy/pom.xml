@@ -201,6 +201,7 @@
     <module>gvadapter-http</module>
     <module>gvvcl-jms</module>
     <module>gvvcl-ws</module>
+    <module>gvvcl-mail</module>
   </modules>
 
 </project>
