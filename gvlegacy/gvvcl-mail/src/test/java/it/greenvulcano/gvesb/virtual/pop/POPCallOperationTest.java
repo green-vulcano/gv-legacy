@@ -28,14 +28,15 @@ public class POPCallOperationTest extends TestCase {
     private Context             context;
 
     private static GreenMail    server       = null;
-    private static ServerSetup  SMTP         = new ServerSetup(10025, null, ServerSetup.PROTOCOL_SMTP);
-    private static ServerSetup  POP3         = new ServerSetup(10110, null, ServerSetup.PROTOCOL_POP3);
+    private static ServerSetup  SMTP         = new ServerSetup(11025, null, ServerSetup.PROTOCOL_SMTP);
+    private static ServerSetup  POP3         = new ServerSetup(11110, null, ServerSetup.PROTOCOL_POP3);
 
     /**
      * @see junit.framework.TestCase#setUp()
      */
     @Override
     protected void setUp() throws Exception {
+    	System.setProperty("javax.xml.transform.TransformerFactory","org.apache.xalan.processor.TransformerFactoryImpl");
         server = new GreenMail(new ServerSetup[]{SMTP, POP3});
         server.setUser("test@gv.com", "password");
         server.setUser("test1@gv.com", "password");

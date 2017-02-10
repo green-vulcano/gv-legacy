@@ -111,7 +111,6 @@ public class POPCallOperation extends BaseReceiveMailOperation
     {
         Store localStore = getStore(data);
         if (performLogin) {
-        	System.out.println("LoginPassword "+ loginPassword);
         	
             localStore.connect(serverHost, loginUser, loginPassword);
         }

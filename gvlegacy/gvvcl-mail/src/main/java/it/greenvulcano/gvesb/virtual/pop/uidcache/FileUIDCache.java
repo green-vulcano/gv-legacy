@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Fachade for UID Cache.
+ * Facade for UID Cache.
  * 
  * @version 3.0.0 Feb 17, 2010
  * @author GreenVulcano Developer Team

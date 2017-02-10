@@ -139,7 +139,6 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
 //                    value = XMLConfig.getDecrypted(value);
                     //logger.debug("Logging-in with password: " + value);
                     loginPassword = value;
-                    System.out.println("INIT -- Logging-in with password: " + loginPassword);
                 }
                 localProps.setProperty(name, value);
             }
