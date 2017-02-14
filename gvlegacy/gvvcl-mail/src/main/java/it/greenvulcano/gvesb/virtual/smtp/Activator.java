@@ -28,6 +28,11 @@ import it.greenvulcano.gvesb.virtual.OperationFactory;
 import it.greenvulcano.gvesb.virtual.imap.IMAPCallOperation;
 import it.greenvulcano.gvesb.virtual.pop.POPCallOperation;
 
+
+/*
+ * @version 4.0.0 - Feb 2017
+ * @author GreenVulcano Developer Team
+ */
 public class Activator implements BundleActivator {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
