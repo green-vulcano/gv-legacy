@@ -75,6 +75,8 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
      * Invoked from <code>OperationFactory</code> when an <code>Operation</code>
      * needs initialization.<br>
      *
+     * @param node
+     *
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */
     public void init(Node node) throws InitializationException
@@ -116,11 +118,20 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
         }
     }
 
+    /**
+     * 
+     * @return String
+     */
     @Override
     protected String getProtocol() {
         return protocol;
     }
     
+    /**
+     * 
+     * @param locStore
+     * @param data
+     */
     @Override
     protected void postStore(Store locStore, GVBuffer data) throws Exception {
         // do nothing

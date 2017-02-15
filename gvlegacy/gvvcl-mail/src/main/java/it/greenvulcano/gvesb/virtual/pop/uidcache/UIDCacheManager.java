@@ -29,5 +29,11 @@ package it.greenvulcano.gvesb.virtual.pop.uidcache;
  */
 public interface UIDCacheManager
 {
+	/**
+	 * 
+	 * @param key
+	 * @return UIDCache
+	 * @throws Exception
+	 */
     public UIDCache getUIDCache(String key) throws Exception;
 }

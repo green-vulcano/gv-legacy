@@ -29,9 +29,23 @@ package it.greenvulcano.gvesb.virtual.pop.uidcache;
  */
 public interface UIDCache
 {
+	/**
+	 * 
+	 * @param uid
+	 * @return boolean
+	 */
     public boolean contains(String uid);
 
+    /**
+     * 
+     * @param uid
+     */
     public void add(String uid);
     
+    /**
+     * 
+     * @param uid
+     * @return boolean
+     */
     public boolean remove(String uid);
 }

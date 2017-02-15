@@ -40,6 +40,12 @@ public class FileUIDCache implements UIDCache
     private FileUIDCacheManager manager = null;
 
 
+    /**
+     * 
+     * @param key
+     * @param cache
+     * @param manager
+     */
     public FileUIDCache(String key, Set<String> cache, FileUIDCacheManager manager)
     {
         this.key = key;
@@ -47,6 +53,11 @@ public class FileUIDCache implements UIDCache
         this.manager = manager;
     }
 
+    /**
+     * 
+     * @param uid
+     * @return boolean
+     */
     @Override
     public boolean contains(String uid)
     {
@@ -57,6 +68,10 @@ public class FileUIDCache implements UIDCache
         return found;
     }
 
+    /**
+     * 
+     * @param uid
+     */
     @Override
     public void add(String uid)
     {
@@ -73,6 +88,11 @@ public class FileUIDCache implements UIDCache
         }
     }
     
+    /**
+     * 
+     * @param uid
+     * @return boolean
+     */
     public boolean remove(String uid)
     {
         synchronized (cache) {

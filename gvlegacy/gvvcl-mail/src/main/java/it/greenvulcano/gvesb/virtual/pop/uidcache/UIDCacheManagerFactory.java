@@ -40,6 +40,11 @@ public final class UIDCacheManagerFactory
     private static String            popCacheClass           = System.getProperty(POP_CACHE_CLASS_NAME, POP_CACHE_CLASS_DEFAULT);
 
 
+    /**
+     * 
+     * @return UIDCacheManager
+     * @throws Exception
+     */
     public static synchronized UIDCacheManager getInstance() throws Exception
     {
         if (instance == null) {

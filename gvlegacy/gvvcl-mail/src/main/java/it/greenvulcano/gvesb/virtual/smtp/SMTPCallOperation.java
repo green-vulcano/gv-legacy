@@ -179,6 +179,8 @@ public class SMTPCallOperation implements CallOperation
 
     /**
      * 
+     * @param node
+     * 
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */
     @Override
@@ -415,6 +417,10 @@ public class SMTPCallOperation implements CallOperation
     }
 
     /**
+     * 
+     * @param gvBuffer
+     * @return the GVBuffer
+     * 
      * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
      */
     @Override
@@ -583,6 +589,13 @@ public class SMTPCallOperation implements CallOperation
         }
     }
 
+    /**
+     * 
+     * @param data
+     * @param params
+     * @return Session
+     * @throws Exception
+     */
     private Session getSession(GVBuffer data, Map<String, Object> params) throws Exception {
         
 
@@ -725,6 +738,9 @@ public class SMTPCallOperation implements CallOperation
     }
 
     /**
+     * 
+     * @param key
+     * 
      * @see it.greenvulcano.gvesb.virtual.Operation#setKey(it.greenvulcano.gvesb.virtual.OperationKey)
      */
     @Override
@@ -734,6 +750,9 @@ public class SMTPCallOperation implements CallOperation
     }
 
     /**
+     * 
+     * @return OperationKey
+     * 
      * @see it.greenvulcano.gvesb.virtual.Operation#getKey()
      */
     @Override

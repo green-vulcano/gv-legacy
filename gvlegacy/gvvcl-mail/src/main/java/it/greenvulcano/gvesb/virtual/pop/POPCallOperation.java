@@ -83,11 +83,20 @@ public class POPCallOperation extends BaseReceiveMailOperation
         }
     }
 
+    /**
+     * 
+     * @return String
+     */
     @Override
     protected String getProtocol() {
         return protocol;
     }
 
+    /**
+     * 
+     * @param locStore
+     * @param data
+     */
     @Override
     protected void postStore(Store locStore, GVBuffer data) throws Exception {
         cacheKey = null;
@@ -154,7 +163,6 @@ public class POPCallOperation extends BaseReceiveMailOperation
                 fp.add("X-Mailer");
                 folder.fetch(msgs, fp);
                 
-                // TODO:
                 UIDCache uidCache = UIDCacheManagerFactory.getInstance().getUIDCache(cacheKey);
 
                 xml = XMLUtils.getParserInstance();

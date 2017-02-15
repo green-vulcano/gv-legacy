@@ -42,6 +42,11 @@ public class MemoryUIDCacheManager implements UIDCacheManager
     private HashMap<String, Set<String>> popCacheMap           = new HashMap<String, Set<String>>();
 
 
+    /**
+     * 
+     * @return MemoryUIDCacheManager
+     * @throws Exception
+     */
     public static synchronized MemoryUIDCacheManager instance() throws Exception
     {
         if (instance == null) {
@@ -50,16 +55,31 @@ public class MemoryUIDCacheManager implements UIDCacheManager
         return instance;
     }
 
+    /**
+     * 
+     * @return UIDCache
+     * @throws Exception
+     */
     public synchronized UIDCache getUIDCache(String key) throws Exception
     {
         return new MemoryUIDCache(key, getUIDCacheInt(key));
     }
 
+    /**
+     * 
+     */
     public MemoryUIDCacheManager()
     {
         // do nothing
     }
 
+    
+    /**
+     * 
+     * @param key
+     * @return Set<String>
+     * @throws Exception
+     */
     @SuppressWarnings("unchecked")
     private Set<String> getUIDCacheInt(String key) throws Exception
     {

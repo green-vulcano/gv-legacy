@@ -100,6 +100,10 @@ public class UIDCacheRemoveOperation implements CallOperation
     }
 
     /**
+     * 
+     * @param gvBuffer
+     * @return the GVBuffer
+     * 
      * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
      */
     public GVBuffer perform(GVBuffer gvBuffer) throws ConnectionException, CallException, InvalidDataException
@@ -147,6 +151,9 @@ public class UIDCacheRemoveOperation implements CallOperation
     }
 
     /**
+     * 
+     * @param key
+     * 
      * @see it.greenvulcano.gvesb.virtual.Operation#setKey(it.greenvulcano.gvesb.virtual.OperationKey)
      */
     public void setKey(OperationKey key)
@@ -155,6 +162,9 @@ public class UIDCacheRemoveOperation implements CallOperation
     }
 
     /**
+     * 
+     * @return OperationKey
+     * 
      * @see it.greenvulcano.gvesb.virtual.Operation#getKey()
      */
     public OperationKey getKey()

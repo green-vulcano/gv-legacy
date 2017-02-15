@@ -38,12 +38,22 @@ public class MemoryUIDCache implements UIDCache
     private String                key     = null;
     private Set<String>           cache   = null;
 
+    /**
+     * 
+     * @param key
+     * @param cache
+     */
     public MemoryUIDCache(String key, Set<String> cache)
     {
         this.key = key;
         this.cache = cache;
     }
 
+    /**
+     * 
+     * @param uid
+     * @return boolean
+     */
     public boolean contains(String uid)
     {
         boolean found = cache.contains(uid);
@@ -53,12 +63,21 @@ public class MemoryUIDCache implements UIDCache
         return found;
     }
 
+    /**
+     * 
+     * @param uid
+     */
     public void add(String uid)
     {
         logger.debug("Writing UID [" + uid + "] in Cache [" + key + "]");
         cache.add(uid);
     }
     
+    /**
+     * 
+     * @param uid
+     * @return boolean
+     */
     public boolean remove(String uid)
     {
         logger.debug("Deleting UID [" + uid + "] in Cache [" + key + "]");

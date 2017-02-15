@@ -73,6 +73,8 @@ public class ManageEmailCallOperation extends IMAPCallOperation
      * Invoked from <code>OperationFactory</code> when an <code>Operation</code>
      * needs initialization.<br>
      * 
+     * @param node
+     * 
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */
     @Override
@@ -103,6 +105,10 @@ public class ManageEmailCallOperation extends IMAPCallOperation
     }
 
     /**
+     * 
+     * @param gvBuffer
+     * @return the GVBuffer
+     * 
      * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
      */
     @Override

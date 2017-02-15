@@ -68,6 +68,10 @@ public abstract class BaseMailOperation implements CallOperation {
     protected boolean             performLogin    = false;
 
     /**
+     * 
+     * @param node
+     * @return Session
+     * 
      * Preliminary initialization operations
      */
     protected Session preInit(Node node) throws InitializationException {
@@ -173,6 +177,9 @@ public abstract class BaseMailOperation implements CallOperation {
     }
 
     /**
+     * 
+     * @param key
+     * 
      * @see it.greenvulcano.gvesb.virtual.Operation#setKey(it.greenvulcano.gvesb.virtual.OperationKey)
      */
     public void setKey(OperationKey key)
@@ -181,6 +188,9 @@ public abstract class BaseMailOperation implements CallOperation {
     }
 
     /**
+     * 
+     * @return OperationKey
+     * 
      * @see it.greenvulcano.gvesb.virtual.Operation#getKey()
      */
     public OperationKey getKey()

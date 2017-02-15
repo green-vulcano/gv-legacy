@@ -37,6 +37,10 @@ public class Activator implements BundleActivator {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
 
+	/**
+	 * 
+	 * @param context
+	 */
     public void start(BundleContext context) throws Exception {
     	OperationFactory.registerSupplier("smtp-call", SMTPCallOperation::new);
     	OperationFactory.registerSupplier("pop-call", POPCallOperation::new);
@@ -44,6 +48,10 @@ public class Activator implements BundleActivator {
 		LOG.debug("*********** GV VCL Mail Up&Runnig");
     }
 
+    /**
+     * 
+     * @param context
+     */
     public void stop(BundleContext context) throws Exception {
     	OperationFactory.unregisterSupplier("smtp-call");
     	OperationFactory.unregisterSupplier("pop-call");

@@ -54,12 +54,20 @@ public class FileUIDCacheManager implements UIDCacheManager
     private boolean                      popCacheFolderReadAlways = Boolean.getBoolean(POP_CACHE_READ_ALWAYS);
 
 
+    /**
+     * 
+     * @param key
+     * @return UIDCache
+     */
     @Override
     public synchronized UIDCache getUIDCache(String key) throws Exception
     {
         return new FileUIDCache(key, getUIDCacheInt(key), this);
     }
 
+    /**
+     * 
+     */
     public FileUIDCacheManager()
     {
         try {
@@ -76,6 +84,12 @@ public class FileUIDCacheManager implements UIDCacheManager
         }
     }
 
+    /**
+     * 
+     * @param key
+     * @return Set<String>
+     * @throws Exception
+     */
     @SuppressWarnings("unchecked")
     private Set<String> getUIDCacheInt(String key) throws Exception
     {
@@ -118,6 +132,11 @@ public class FileUIDCacheManager implements UIDCacheManager
         return uidCache;
     }
 
+    /**
+     * 
+     * @param key
+     * @throws Exception
+     */
     void updateUIDCacheInt(String key) throws Exception
     {
         Set<String> uidCache = popCacheMap.get(key);

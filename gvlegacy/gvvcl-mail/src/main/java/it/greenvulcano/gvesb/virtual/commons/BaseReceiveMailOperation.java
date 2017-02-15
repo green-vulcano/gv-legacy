@@ -67,6 +67,7 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     protected boolean           expunge         = false;
     protected boolean           exportEML       = false;
     protected Store             store           = null;
+    
     /**
      * The emails cleaner pattern
      */
@@ -74,6 +75,10 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     protected int               maxReadMessages = -1;
 
     /**
+     * 
+     * @param node
+     * @return Session
+     * 
      * Preliminary initialization operations
      */
     protected Session preInit(Node node) throws InitializationException {
@@ -107,9 +112,17 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
         }
     }
 
+    /**
+     * 
+     * @return String
+     */
     protected abstract String getProtocol();
 
     /**
+     * 
+     * @param gvBuffer
+     * @return the GVBuffer
+     * 
      * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
      */
     public GVBuffer perform(GVBuffer gvBuffer) throws ConnectionException, CallException, InvalidDataException
@@ -124,10 +137,28 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
         }
     }
 
+    /**
+     * 
+     * @param data
+     * @return the GVBuffer
+     * @throws Exception
+     */
     protected abstract GVBuffer receiveMails(GVBuffer data) throws Exception;
 
+    /**
+     * 
+     * @param locStore
+     * @param data
+     * @throws Exception
+     */
     protected abstract void postStore(Store locStore, GVBuffer data) throws Exception;
 
+    /**
+     * 
+     * @param data
+     * @return Store
+     * @throws Exception
+     */
     protected Store getStore(GVBuffer data) throws Exception {
         
         if (!dynamicServer) {
@@ -186,6 +217,13 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
         }
     }
 
+    /**
+     * 
+     * @param p
+     * @param msg
+     * @param xml
+     * @throws Exception
+     */
     protected void dumpPart(Part p, Element msg, XMLUtils xml) throws Exception
     {
         if (p instanceof Message) {
@@ -238,6 +276,13 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
         }
     }
 
+    /**
+     * 
+     * @param m
+     * @param msg
+     * @param xml
+     * @throws Exception
+     */
     private void dumpEnvelope(Message m, Element msg, XMLUtils xml) throws Exception
     {
         dumpSR(m.getFrom(), msg, "From", xml);
@@ -256,6 +301,14 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
         xml.insertText(subject, m.getSubject());
     }
 
+    /**
+     * 
+     * @param addr
+     * @param msg
+     * @param container
+     * @param xml
+     * @throws Exception
+     */
     private void dumpSR(Address[] addr, Element msg, String container, XMLUtils xml) throws Exception
     {
         Element cont = xml.insertElement(msg, container);
