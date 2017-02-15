@@ -236,7 +236,7 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
                 }
             }
             data.setRetCode(0);
-            data.setProperty("POP_MESSAGE_COUNT", String.valueOf(messageCount));
+            data.setProperty("IMAP_MESSAGE_COUNT", String.valueOf(messageCount));
             folder.close(expunge);
         }
         finally {

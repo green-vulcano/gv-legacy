@@ -74,6 +74,12 @@
           <pop-call name="ReadEmailsCount" jndi-name="openejb:Resource/mailServerRec" class="it.greenvulcano.gvesb.virtual.pop.POPCallOperation"  
           delete-messages="false" max-read-messages="1" type="call">
           </pop-call>
+          <imap-call name="ReadEmailsImap" jndi-name="openejb:Resource/mailServerRecImap" class="it.greenvulcano.gvesb.virtual.imap.IMAPCallOperation"  
+          delete-messages="false" type="call">
+          </imap-call>
+          <imap-call name="ReadEmailsImapCount" jndi-name="openejb:Resource/mailServerRecImap" class="it.greenvulcano.gvesb.virtual.imap.IMAPCallOperation"  
+          delete-messages="false" max-read-messages="1" type="call">
+          </imap-call>
         </Channel>
       </System>
     </Systems>
