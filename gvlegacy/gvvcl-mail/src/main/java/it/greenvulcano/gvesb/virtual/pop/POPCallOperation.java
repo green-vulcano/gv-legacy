@@ -154,6 +154,7 @@ public class POPCallOperation extends BaseReceiveMailOperation
                 fp.add("X-Mailer");
                 folder.fetch(msgs, fp);
                 
+                // TODO:
                 UIDCache uidCache = UIDCacheManagerFactory.getInstance().getUIDCache(cacheKey);
 
                 xml = XMLUtils.getParserInstance();
