@@ -74,6 +74,7 @@ public class ManageEmailCallOperation extends IMAPCallOperation
      * needs initialization.<br>
      * 
      * @param node
+     * 			The configuration node containing all informations.
      * 
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */

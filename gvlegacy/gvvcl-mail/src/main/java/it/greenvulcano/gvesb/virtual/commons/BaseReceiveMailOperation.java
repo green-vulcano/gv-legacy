@@ -75,11 +75,13 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     protected int               maxReadMessages = -1;
 
     /**
-     * 
-     * @param node
-     * @return Session
-     * 
      * Preliminary initialization operations
+     * 
+     * @param node 
+     * 			The configuration node containing all informations.
+     * @return Session 
+     * 			The session 
+     * 
      */
     protected Session preInit(Node node) throws InitializationException {
         try {
@@ -113,14 +115,17 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     }
 
     /**
+     * Abstract method for retrieve the protocol
      * 
-     * @return String
+     * @return String  
+     * 			The protocol 
      */
     protected abstract String getProtocol();
 
     /**
      * 
-     * @param gvBuffer
+     * @param gvBuffer 
+     * 			The GVBuffer to be used within the service
      * @return the GVBuffer
      * 
      * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
@@ -138,8 +143,10 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     }
 
     /**
+     * Abstract method for receiving mails
      * 
-     * @param data
+     * @param data 
+     * 			The GVBuffer to be used within the service
      * @return the GVBuffer
      * @throws Exception
      */
@@ -154,6 +161,7 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     protected abstract void postStore(Store locStore, GVBuffer data) throws Exception;
 
     /**
+     * Retrieve information about Store
      * 
      * @param data
      * @return Store
@@ -218,6 +226,7 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     }
 
     /**
+     * Generate dump Part of message
      * 
      * @param p
      * @param msg
@@ -277,6 +286,7 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     }
 
     /**
+     * Execute dump for envelope
      * 
      * @param m
      * @param msg

@@ -112,10 +112,10 @@ public class ByteArrayDataSource implements DataSource
     }
 
     /**
-     * Returns an InputStream representing the the data. and will throw an
+     * Returns an InputStream representing the data. and will throw an
      * IOException if it can not do so.
      *
-     * @return an InputStream representing the the data.
+     * @return InputStream: an InputStream representing the data.
      *
      * @exception IOException
      *            if it can not do so.
@@ -129,11 +129,11 @@ public class ByteArrayDataSource implements DataSource
     }
 
     /**
-     * Returns an OutputStream representing the the data and will throw an
+     * Returns an OutputStream representing the data and will throw an
      * IOException if it can not do so. This method will return a new instance
      * of OutputStream with each invocation.
      *
-     * @return an OutputStream representing the the data.
+     * @return OutputStream: an OutputStream representing the the data.
      *
      * @exception IOException
      *            if it can not do so.

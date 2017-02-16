@@ -180,6 +180,7 @@ public class SMTPCallOperation implements CallOperation
     /**
      * 
      * @param node
+     * 			The configuration node containing all informations. 
      * 
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */
@@ -418,7 +419,8 @@ public class SMTPCallOperation implements CallOperation
 
     /**
      * 
-     * @param gvBuffer
+     * @param gvBuffer 
+     * 			for transport data in GreenVulcano
      * @return the GVBuffer
      * 
      * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
@@ -590,10 +592,14 @@ public class SMTPCallOperation implements CallOperation
     }
 
     /**
+     * return the session for a Server
      * 
      * @param data
+     * 			the GVBuffer
      * @param params
-     * @return Session
+     * 			The maps content all property from the GVBuffer
+     * @return Session:
+     * 			return the session for a Server
      * @throws Exception
      */
     private Session getSession(GVBuffer data, Map<String, Object> params) throws Exception {

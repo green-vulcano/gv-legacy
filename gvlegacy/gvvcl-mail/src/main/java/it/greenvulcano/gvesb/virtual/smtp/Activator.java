@@ -39,7 +39,8 @@ public class Activator implements BundleActivator {
 
 	/**
 	 * 
-	 * @param context
+	 * @param context 
+	 * 			The execution context of the bundle being started.
 	 */
     public void start(BundleContext context) throws Exception {
     	OperationFactory.registerSupplier("smtp-call", SMTPCallOperation::new);
@@ -51,6 +52,7 @@ public class Activator implements BundleActivator {
     /**
      * 
      * @param context
+     * 			The execution context of the bundle being stopped.
      */
     public void stop(BundleContext context) throws Exception {
     	OperationFactory.unregisterSupplier("smtp-call");

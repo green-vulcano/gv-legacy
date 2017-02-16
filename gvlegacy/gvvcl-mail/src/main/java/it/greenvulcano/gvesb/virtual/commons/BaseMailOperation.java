@@ -68,11 +68,12 @@ public abstract class BaseMailOperation implements CallOperation {
     protected boolean             performLogin    = false;
 
     /**
+     * Preliminary initialization operations
      * 
      * @param node
+     * 			The configuration node containing all informations.
      * @return Session
      * 
-     * Preliminary initialization operations
      */
     protected Session preInit(Node node) throws InitializationException {
         JNDIHelper initialContext = null;
@@ -177,6 +178,7 @@ public abstract class BaseMailOperation implements CallOperation {
     }
 
     /**
+     * Set the key
      * 
      * @param key
      * 
@@ -188,6 +190,7 @@ public abstract class BaseMailOperation implements CallOperation {
     }
 
     /**
+     * Return the key
      * 
      * @return OperationKey
      * 

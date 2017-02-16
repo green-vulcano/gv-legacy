@@ -76,6 +76,7 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
      * needs initialization.<br>
      *
      * @param node
+     * 			The configuration node containing all informations.
      *
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */
@@ -119,6 +120,7 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
     }
 
     /**
+     * Return the protocol
      * 
      * @return String
      */
@@ -145,6 +147,7 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
      * @return the GVBuffer.
      * @throws Exception
      * @throws Exception
+     * 
      */
     protected GVBuffer receiveMails(GVBuffer data) throws Exception
     {
