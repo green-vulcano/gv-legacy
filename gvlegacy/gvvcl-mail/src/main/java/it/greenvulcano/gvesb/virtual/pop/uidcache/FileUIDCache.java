@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -43,9 +43,12 @@ public class FileUIDCache implements UIDCache
     /**
      * 
      * @param key
+     * 			the key of the UIDCache
      * @param cache
+     * 			A Set<String> for a cache
      * @param manager
-     */
+     * 			Instance of FileUIDCacheManager
+     */	
     public FileUIDCache(String key, Set<String> cache, FileUIDCacheManager manager)
     {
         this.key = key;
@@ -54,9 +57,7 @@ public class FileUIDCache implements UIDCache
     }
 
     /**
-     * 
-     * @param uid
-     * @return boolean
+     *
      */
     @Override
     public boolean contains(String uid)
@@ -69,8 +70,7 @@ public class FileUIDCache implements UIDCache
     }
 
     /**
-     * 
-     * @param uid
+     *
      */
     @Override
     public void add(String uid)
@@ -89,9 +89,7 @@ public class FileUIDCache implements UIDCache
     }
     
     /**
-     * 
-     * @param uid
-     * @return boolean
+     *
      */
     public boolean remove(String uid)
     {

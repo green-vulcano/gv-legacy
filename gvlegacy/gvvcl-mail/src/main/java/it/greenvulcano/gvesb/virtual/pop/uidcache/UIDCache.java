@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -30,22 +30,30 @@ package it.greenvulcano.gvesb.virtual.pop.uidcache;
 public interface UIDCache
 {
 	/**
+	 * Verify if the uid is contained in cache
 	 * 
-	 * @param uid
-	 * @return boolean
+	 * @param uid 
+	 * 			idetified for cache
+	 * @return boolean 
+	 * 			return true if the cache contains the uid
 	 */
     public boolean contains(String uid);
 
     /**
+     * Add an uid in a cache
      * 
      * @param uid
+     * 			identified for cache
      */
     public void add(String uid);
     
     /**
+     * Remove an uid in a cache
      * 
      * @param uid
+     * 			identified for cache
      * @return boolean
+     * 			return true if an uid is removed from cache
      */
     public boolean remove(String uid);
 }

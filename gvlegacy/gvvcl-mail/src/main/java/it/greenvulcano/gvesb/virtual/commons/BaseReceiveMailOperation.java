@@ -155,7 +155,9 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
     /**
      * 
      * @param locStore
+     * 			javax.mail.Store
      * @param data
+     * 			the GVBuffer
      * @throws Exception
      */
     protected abstract void postStore(Store locStore, GVBuffer data) throws Exception;

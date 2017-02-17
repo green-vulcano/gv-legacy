@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Fachade for UID Cache.
+ * Facade for UID Cache.
  *
  * @version 4.0.0 - Feb 2017
  * @author GreenVulcano Developer Team
@@ -40,8 +40,10 @@ public class MemoryUIDCache implements UIDCache
 
     /**
      * 
-     * @param key
+     * @param key 
+     * 		The key of UIDCache
      * @param cache
+     * 		A Set<String> for a cache
      */
     public MemoryUIDCache(String key, Set<String> cache)
     {
@@ -50,9 +52,12 @@ public class MemoryUIDCache implements UIDCache
     }
 
     /**
+     * Verify if the cache Set<String> contains uid 
      * 
      * @param uid
+     * 			The uid of the cache
      * @return boolean
+     * 			Returns true if the cache Set<String> contains uid 
      */
     public boolean contains(String uid)
     {
@@ -64,8 +69,10 @@ public class MemoryUIDCache implements UIDCache
     }
 
     /**
+     * Add uid in cache
      * 
      * @param uid
+     * 			The uid of the cache
      */
     public void add(String uid)
     {
@@ -74,9 +81,12 @@ public class MemoryUIDCache implements UIDCache
     }
     
     /**
+     * Remove uid from cache with success
      * 
      * @param uid
+     * 			The uid of the cache
      * @return boolean
+     * 			Returns true if remove udi from cache with success
      */
     public boolean remove(String uid)
     {

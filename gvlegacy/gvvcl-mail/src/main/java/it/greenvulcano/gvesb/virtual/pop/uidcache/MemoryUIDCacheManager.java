@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -43,8 +43,10 @@ public class MemoryUIDCacheManager implements UIDCacheManager
 
 
     /**
+     * Returns the MemoryUIDCacheManager instance. If there is no instance, the method generate it.
      * 
-     * @return MemoryUIDCacheManager
+     * @return MamoryUIDCacheManager
+     * 			the MemoryUIDCacheManager instance
      * @throws Exception
      */
     public static synchronized MemoryUIDCacheManager instance() throws Exception
@@ -75,9 +77,12 @@ public class MemoryUIDCacheManager implements UIDCacheManager
 
     
     /**
+     * Return a Set<String> of UIDCache take from a popCacheMap 
      * 
      * @param key
+     * 			The key to search in popCacheMap
      * @return Set<String>
+     * 			the Set<String> UIDCache value
      * @throws Exception
      */
     @SuppressWarnings("unchecked")

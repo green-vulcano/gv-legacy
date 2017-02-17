@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -66,8 +66,6 @@ public class POPCallOperation extends BaseReceiveMailOperation
     private String              cacheKey        = null;
 
     /**
-     * Invoked from <code>OperationFactory</code> when an <code>Operation</code>
-     * needs initialization.<br>
      *
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */
@@ -84,8 +82,10 @@ public class POPCallOperation extends BaseReceiveMailOperation
     }
 
     /**
+     * Return the protocol
      * 
-     * @return String
+     * @return String 
+     * 			the protocol
      */
     @Override
     protected String getProtocol() {
@@ -94,8 +94,6 @@ public class POPCallOperation extends BaseReceiveMailOperation
 
     /**
      * 
-     * @param locStore
-     * @param data
      */
     @Override
     protected void postStore(Store locStore, GVBuffer data) throws Exception {
@@ -114,7 +112,6 @@ public class POPCallOperation extends BaseReceiveMailOperation
      * @param data
      *        the input GVBuffer.
      * @return the GVBuffer.
-     * @throws Exception
      * @throws Exception
      */
     protected GVBuffer receiveMails(GVBuffer data) throws Exception

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -102,6 +102,7 @@ public class UIDCacheRemoveOperation implements CallOperation
     /**
      * 
      * @param gvBuffer
+     * 			the input service data
      * @return the GVBuffer
      * 
      * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
@@ -151,8 +152,10 @@ public class UIDCacheRemoveOperation implements CallOperation
     }
 
     /**
+     * Set the key
      * 
      * @param key
+     * 			the OperationKey object
      * 
      * @see it.greenvulcano.gvesb.virtual.Operation#setKey(it.greenvulcano.gvesb.virtual.OperationKey)
      */
@@ -162,6 +165,7 @@ public class UIDCacheRemoveOperation implements CallOperation
     }
 
     /**
+     * Get the key
      * 
      * @return OperationKey
      * 

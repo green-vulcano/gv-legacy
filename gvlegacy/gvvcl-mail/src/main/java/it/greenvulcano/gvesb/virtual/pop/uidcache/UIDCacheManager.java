@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -30,9 +30,12 @@ package it.greenvulcano.gvesb.virtual.pop.uidcache;
 public interface UIDCacheManager
 {
 	/**
+	 * Return an UIDCache from an identifier key
 	 * 
 	 * @param key
+	 * 			the key for identifier UIDCache
 	 * @return UIDCache
+	 * 			return the UIDCache
 	 * @throws Exception
 	 */
     public UIDCache getUIDCache(String key) throws Exception;

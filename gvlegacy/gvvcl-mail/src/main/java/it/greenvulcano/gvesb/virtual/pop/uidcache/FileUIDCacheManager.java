@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -57,6 +57,7 @@ public class FileUIDCacheManager implements UIDCacheManager
     /**
      * 
      * @param key
+     * 			the key of the UIDCache
      * @return UIDCache
      */
     @Override
@@ -66,7 +67,7 @@ public class FileUIDCacheManager implements UIDCacheManager
     }
 
     /**
-     * 
+     * creates the POP cache folder
      */
     public FileUIDCacheManager()
     {
@@ -85,9 +86,12 @@ public class FileUIDCacheManager implements UIDCacheManager
     }
 
     /**
+     * Retrieve UIDCache from a file
      * 
      * @param key
+     * 			the key of the UIDCache
      * @return Set<String>
+     * 			returns a Set<String> of UIDCache 
      * @throws Exception
      */
     @SuppressWarnings("unchecked")
@@ -133,8 +137,10 @@ public class FileUIDCacheManager implements UIDCacheManager
     }
 
     /**
+     * Update UIDCache data in a file
      * 
      * @param key
+     * 			the key of the UIDCache
      * @throws Exception
      */
     void updateUIDCacheInt(String key) throws Exception

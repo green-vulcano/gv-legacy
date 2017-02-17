@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
+ * Copyright (c) 2009, 2017 GreenVulcano ESB Open Source Project.
  * All rights reserved.
  *
  * This file is part of GreenVulcano ESB.
@@ -41,8 +41,10 @@ public final class UIDCacheManagerFactory
 
 
     /**
+     * Returns the UIDCacheManager instance. If there is no instance, the method generate it.
      * 
      * @return UIDCacheManager
+     * 			the UIDCacheManager instance
      * @throws Exception
      */
     public static synchronized UIDCacheManager getInstance() throws Exception
