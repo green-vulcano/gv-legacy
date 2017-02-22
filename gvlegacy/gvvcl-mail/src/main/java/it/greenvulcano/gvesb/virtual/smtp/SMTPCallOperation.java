@@ -23,7 +23,6 @@ package it.greenvulcano.gvesb.virtual.smtp;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -188,10 +187,8 @@ public class SMTPCallOperation implements CallOperation
     public void init(Node node) throws InitializationException
     {
         JNDIHelper initialContext = null;
-        try {
-        	
-        	System.out.println("************** "+this);
-        	
+        try {        	
+        	        	
             jndiName = XMLConfig.get(node, "@jndi-name");
             if (jndiName != null) {
                 logger.debug("JNDI name: " + jndiName);
@@ -231,8 +228,8 @@ public class SMTPCallOperation implements CallOperation
                         loginUser = value;
                     }
                     else if (name.contains(".password")) {
-//                        value = XMLConfig.getDecrypted(value);
-                        //logger.debug("Logging-in with password: " + value);
+                        value = XMLConfig.getDecrypted(value);
+                       
                         loginPassword = value;
                         logger.debug("INIT -- Logging-in with password: " + loginPassword);
                         performLogin = true;
@@ -615,10 +612,10 @@ public class SMTPCallOperation implements CallOperation
         
         try {
             Properties localProps = new Properties();
-            for (Iterator iterator = serverProps.keySet().iterator(); iterator.hasNext();) {
+            for (Object key : serverProps.keySet()) {
                 
-            	
-            	String name = (String) iterator.next();
+            	String name = key.toString();
+            	            	
                 String value = PropertiesHandler.expand(serverProps.getProperty(name), params, data);
                 
                 if (name.contains(".host")) {
@@ -631,7 +628,7 @@ public class SMTPCallOperation implements CallOperation
                 }
                 else if (name.contains(".password")) {
                     value = XMLConfig.getDecrypted(value);
-                    //logger.debug("Logging-in with password: " + value);
+                   
                     loginPassword = value;
                 }
                 localProps.setProperty(name, value);

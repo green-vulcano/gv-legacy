@@ -23,7 +23,6 @@ package it.greenvulcano.gvesb.virtual.commons;
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -185,8 +184,8 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
             Map<String, Object> params = GVBufferPropertiesHelper.getPropertiesMapSO(data, true);
 
             Properties localProps = new Properties();
-            for (Iterator iterator = serverProps.keySet().iterator(); iterator.hasNext();) {
-                String name = (String) iterator.next();
+            for (Object k : serverProps.keySet()) {
+                String name = (String) k;
                 String value = PropertiesHandler.expand(serverProps.getProperty(name), params, data);
                 if (name.contains(".host")) {
                     logger.debug("Logging-in to host: " + value);
@@ -197,8 +196,8 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
                     loginUser = value;
                 }
                 else if (name.contains(".password")) {
-//                    value = XMLConfig.getDecrypted(value);
-                    //logger.debug("Logging-in with password: " + value);
+                    value = XMLConfig.getDecrypted(value);
+                    
                     loginPassword = value;
                 }
                 localProps.setProperty(name, value);
