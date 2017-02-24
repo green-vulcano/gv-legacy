@@ -34,6 +34,7 @@ public class SMTPCallOperationTest extends TestCase {
     @Override
     protected void setUp() throws Exception
     {
+    	XMLConfig.setBaseConfigPath(getClass().getClassLoader().getResource(".").getPath());
         ServerSetup SMTP = new ServerSetup(11025, null, ServerSetup.PROTOCOL_SMTP);
         ServerSetup POP3 = new ServerSetup(11110, null, ServerSetup.PROTOCOL_POP3);
         server = new GreenMail(new ServerSetup[] {SMTP, POP3});

@@ -36,6 +36,7 @@ public class POPCallOperationTest extends TestCase {
      */
     @Override
     protected void setUp() throws Exception {
+    	XMLConfig.setBaseConfigPath(getClass().getClassLoader().getResource(".").getPath());
     	System.setProperty("javax.xml.transform.TransformerFactory","org.apache.xalan.processor.TransformerFactoryImpl");
         server = new GreenMail(new ServerSetup[]{SMTP, POP3});
         server.setUser("test@gv.com", "password");
