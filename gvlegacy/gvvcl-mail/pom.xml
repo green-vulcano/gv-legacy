@@ -96,12 +96,6 @@
     		<scope>provided</scope>	
 		</dependency>
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>${version.slf4j}</version>
-			<scope>provided</scope>			
-		</dependency>
-		<dependency>
     		<groupId>com.sun.mail</groupId>
     		<artifactId>imap</artifactId>
     		<version>1.5.6</version>

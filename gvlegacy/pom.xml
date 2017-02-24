@@ -22,7 +22,7 @@
     <maven-bundle-plugin.version>3.0.1</maven-bundle-plugin.version>
 
     <version.osgi>5.0.0</version.osgi>
-    <version.slf4j>1.6.1</version.slf4j>
+    <version.pax-logging>1.9.1</version.pax-logging>
     <version.junit>4.11</version.junit>
 
     <cloud.nexus.content>http://mvn.greenvulcano.com/nexus/content</cloud.nexus.content>
@@ -96,11 +96,11 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>${version.slf4j}</version>
-      <scope>provided</scope>
-    </dependency>
+    	<groupId>org.ops4j.pax.logging</groupId>
+    	<artifactId>pax-logging-log4j2</artifactId>
+    	<version>${version.pax-logging}</version>
+    	<scope>provided</scope>
+	</dependency>
 
     <!-- *************** TEST *************** -->
     <dependency>
