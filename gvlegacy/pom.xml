@@ -202,6 +202,7 @@
     <module>gvvcl-jms</module>
     <module>gvvcl-ws</module>
     <module>gvvcl-mail</module>
+    <module>gvsocial</module>
   </modules>
 
 </project>

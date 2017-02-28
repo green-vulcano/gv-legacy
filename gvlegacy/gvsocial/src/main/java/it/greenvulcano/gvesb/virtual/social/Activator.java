@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with GreenVulcano ESB. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package it.greenvulcano.gvesb.virtual.smtp;
+package it.greenvulcano.gvesb.virtual.social;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -25,9 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.greenvulcano.gvesb.virtual.OperationFactory;
-import it.greenvulcano.gvesb.virtual.imap.IMAPCallOperation;
-import it.greenvulcano.gvesb.virtual.pop.POPCallOperation;
-
 
 /*
  * @version 4.0.0 - Feb 2017
@@ -43,10 +40,8 @@ public class Activator implements BundleActivator {
 	 * 			The execution context of the bundle being started.
 	 */
     public void start(BundleContext context) throws Exception {
-    	OperationFactory.registerSupplier("smtp-call", SMTPCallOperation::new);
-    	OperationFactory.registerSupplier("pop-call", POPCallOperation::new);
-    	OperationFactory.registerSupplier("imap-call", IMAPCallOperation::new);
-		LOG.debug("*********** GV VCL Mail Up&Runnig");
+    	OperationFactory.registerSupplier("social-call", SocialCallOperation::new);
+		LOG.debug("*********** GV Social Up&Runnig");
     }
 
     /**
@@ -55,10 +50,8 @@ public class Activator implements BundleActivator {
      * 			The execution context of the bundle being stopped.
      */
     public void stop(BundleContext context) throws Exception {
-    	OperationFactory.unregisterSupplier("smtp-call");
-    	OperationFactory.unregisterSupplier("pop-call");
-    	OperationFactory.unregisterSupplier("imap-call");
-		LOG.debug("*********** GV VCL Mail Stopped");
+    	OperationFactory.unregisterSupplier("social-call");
+		LOG.debug("*********** GV Social Stopped");
     }
 
 }
