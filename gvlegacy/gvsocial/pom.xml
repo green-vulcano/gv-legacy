@@ -86,11 +86,15 @@
 			<scope>provided</scope>	
 		</dependency>
 		
-		<dependency>
+		
+        
+        <!-- *** COMPILE *** -->
+        
+        <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
             <version>4.0.6</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         
         <!-- *************** TEST *************** -->
@@ -121,11 +125,22 @@
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Bundle-Activator>it.greenvulcano.gvesb.virtual.social.Activator</Bundle-Activator>
                         <Export-Package>
-                            it.greenvulcano.gvesb.*;version=${project.version}
                         </Export-Package>
                         <Import-Package>
-                            *
+                        	it.greenvulcano.configuration,
+							it.greenvulcano.gvesb.buffer,
+							it.greenvulcano.gvesb.internal.data,
+							it.greenvulcano.gvesb.virtual,
+							it.greenvulcano.util,
+							it.greenvulcano.util.metadata,
+							it.greenvulcano.util.txt,
+							it.greenvulcano.util.xml,
+                            org.osgi.framework,
+							org.slf4j,
+							org.w3c.dom
                         </Import-Package>
+                        <Embed-Dependency>*;scope=compile;type=jar</Embed-Dependency>
+						<Embed-Transitive>true</Embed-Transitive>
                     </instructions>
                 </configuration>
             </plugin>
