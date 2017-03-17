@@ -46,12 +46,13 @@ public final class ResultSetTransformer {
          	           
             JSONObject obj = new JSONObject();
             for (String key : names){
+            	
             	 if (key.contains(".")){
          	    		String[] hieararchy = key.split("\\.");
          	    		
          	    		JSONObject child = Optional.ofNullable(obj.optJSONObject(hieararchy[0]))
          	    								   .orElse(new JSONObject());
-         	    		child.put(hieararchy[1],resultSet.getObject(key));
+         	    		child.put(hieararchy[1], Optional.ofNullable(resultSet.getObject(key)).orElse(JSONObject.NULL));
          	    		
          	    		obj.put(hieararchy[0], child);
      	    	} else {
