@@ -318,10 +318,14 @@ public class RESTHttpServletMapping implements HttpServletMapping
         }
         catch (Throwable exc) {
         	exception = exc;
-          
+        	         
             logger.error("handleRequest - Service request failed", exc);
             try {
-                resp.sendError(500, "" + exc);
+            	 if (exc.getMessage().contains("GV_SERVICE_POLICY_ERROR")) {
+            		 resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            	 } else {
+            		 resp.sendError(500, "" + exc); 
+            	 }               
             }
             catch (IOException exc1) {
                 throw new InboundHttpResponseException("GVHTTP_INBOUND_HTTP_RESPONSE_ERROR", new String[][]{{"errorName",

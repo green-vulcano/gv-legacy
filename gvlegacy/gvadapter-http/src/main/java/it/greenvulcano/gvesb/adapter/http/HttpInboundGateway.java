@@ -21,14 +21,18 @@ package it.greenvulcano.gvesb.adapter.http;
 
 import it.greenvulcano.gvesb.adapter.http.exc.InboundHttpResponseException;
 import it.greenvulcano.gvesb.adapter.http.formatters.handlers.AdapterHttpConfigurationException;
+import it.greenvulcano.gvesb.adapter.http.security.GVSecurityIdentityInfo;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpConstants;
 import it.greenvulcano.gvesb.adapter.http.utils.DumpUtils;
+import it.greenvulcano.gvesb.iam.modules.Identity;
 import it.greenvulcano.gvesb.identity.GVIdentityHelper;
+import it.greenvulcano.gvesb.identity.IdentityInfo;
 import it.greenvulcano.gvesb.identity.impl.HTTPIdentityInfo;
 import it.greenvulcano.gvesb.log.GVFormatLog;
 import it.greenvulcano.log.NMDC;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -249,6 +253,11 @@ public class HttpInboundGateway extends HttpServlet
 
             // Create and insert the caller in the security context
             GVIdentityHelper.push(new HTTPIdentityInfo(req));
+            Optional<Identity> identity = Optional.ofNullable((Identity)req.getAttribute(Identity.class.getName()));
+            IdentityInfo identityInfo = (identity.isPresent()) ? new GVSecurityIdentityInfo(req, identity.get()) : new HTTPIdentityInfo(req);
+            	            
+            GVIdentityHelper.push(identityInfo);
+            
             
             smapping.handleRequest(method, req, resp);
 

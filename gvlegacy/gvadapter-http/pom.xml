@@ -47,6 +47,13 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>it.greenvulcano.gvesb</groupId>
+			<artifactId>gviam</artifactId>
+			<version>${gvesb.version}</version>
+			<type>bundle</type>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<version>3.1.0</version>
@@ -90,10 +97,13 @@
                         	it.greenvulcano.gvesb.j2ee,
                         	it.greenvulcano.gvesb.log,                        	
                         	it.greenvulcano.gvesb.utils,
+                        	it.greenvulcano.gvesb.iam.modules,
+                        	it.greenvulcano.gvesb.iam.exception,
                         	javax.servlet,
                         	javax.servlet.http,
                         	javax.xml.parsers,
                         	javax.xml.transform,
+                        	org.osgi.framework,
                         	org.apache.commons.io,
                         	org.apache.commons.io.output,
                         	org.slf4j;version="[1.6,2)";provider=paxlogging,
