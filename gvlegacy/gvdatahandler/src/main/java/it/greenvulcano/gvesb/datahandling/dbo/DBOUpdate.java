@@ -42,6 +42,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.w3c.dom.Node;
@@ -159,7 +160,7 @@ public class DBOUpdate extends AbstractDBO
             resetGeneratedKeyID = attributes.getValue("reset-generate-key");
             readGeneratedKey = autogenerateKeys && (generatedKeyID != null);
         }
-        else if (sqlStatementInfo.usesNamedParams()) {
+        else if (Objects.nonNull(sqlStatementInfo) && sqlStatementInfo.usesNamedParams()) {
             processParams = sqlStatementInfo.getSqlStatementParams().containsKey(localName);
         }
         else {
