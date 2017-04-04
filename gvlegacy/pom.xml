@@ -202,6 +202,9 @@
     <module>gvvcl-jms</module>
     <module>gvvcl-ws</module>
     <module>gvvcl-mail</module>
+    <module>gvvcl-file</module>
+    <module>gvvcl-rsh</module>
+    <module>gvvcl-birt</module>
     <module>gvsocial</module>
   </modules>
 

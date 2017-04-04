@@ -1,5 +1,7 @@
 package it.greenvulcano.gvesb.adapter.http.security;
 
+import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpServletRequest;
 
 import it.greenvulcano.gvesb.iam.modules.Identity;
@@ -12,6 +14,9 @@ public class GVSecurityIdentityInfo extends HTTPIdentityInfo {
 	public GVSecurityIdentityInfo(HttpServletRequest request, Identity identity) {
 		super(request);
 		this.identity = identity;
+		
+		getAttributes().put("id", identity.getId().toString());
+		getAttributes().put("roles", identity.getRoles().stream().collect(Collectors.joining(",")));
 	}
 
 	@Override
