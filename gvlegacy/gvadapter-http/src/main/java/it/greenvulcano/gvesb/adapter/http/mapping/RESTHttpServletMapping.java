@@ -50,6 +50,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -377,10 +378,11 @@ public class RESTHttpServletMapping implements HttpServletMapping
                 request.setProperty(n, ((v != null) && !"".equals(v)) ? v : "NULL");
             }
 
-            String ct = req.getContentType();
-            request.setProperty("HTTP_REQ_CONTENT_TYPE", (ct != null) ? ct : "NULL");
+            String ct = Optional.of(req.getContentType()).orElse("");
+            request.setProperty("HTTP_REQ_CONTENT_TYPE", ct.isEmpty() ? ct : "NULL");
             String acc = req.getHeader("Accept");
             request.setProperty("HTTP_REQ_ACCEPT", (acc != null) ? acc : "NULL");
+           
             if (methodName.equals("POST") || methodName.equals("PUT")) {
                 if (!ct.startsWith(AdapterHttpConstants.URLENCODED_MIMETYPE_NAME)) {
                     Object requestContent = IOUtils.toByteArray(req.getInputStream());
