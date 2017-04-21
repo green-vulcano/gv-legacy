@@ -40,6 +40,17 @@ public class ParameterType
     public static final String ORACLE_INT      = "int";
 
     /**
+     * The oracle Timestamp
+     */
+    public static final String ORACLE_TIMESTAMP     = "timestamp";    
+    
+    
+    /**
+     * The oracle Timestamp
+     */
+    public static final String ORACLE_TIMESTAMP_WITH_TZ     = "tztimestamp";
+    
+    /**
      * The oracle Date
      */
     public static final String ORACLE_DATE     = "date";

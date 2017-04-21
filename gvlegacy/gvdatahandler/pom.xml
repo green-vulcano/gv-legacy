@@ -140,6 +140,7 @@
 							javax.xml.transform,
 							javax.xml.transform.sax,
 							org.json,
+							org.apache.commons.io,
 							org.osgi.framework;version="[1.7,2)",
 							org.osgi.service.blueprint;version="[1.0.0,2.0.0)",
 							org.w3c.dom,

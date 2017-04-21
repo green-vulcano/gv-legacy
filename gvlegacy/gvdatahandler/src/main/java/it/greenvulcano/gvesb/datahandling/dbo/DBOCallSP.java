@@ -408,6 +408,10 @@ public class DBOCallSP extends AbstractDBO
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_DATE)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.DATE);
+                    }  else if (type.equalsIgnoreCase(ParameterType.ORACLE_TIMESTAMP)) {
+                        callStmt.registerOutParameter(iPos, java.sql.Types.TIMESTAMP);
+                    } else if (type.equalsIgnoreCase(ParameterType.ORACLE_TIMESTAMP_WITH_TZ)) {
+                        callStmt.registerOutParameter(iPos, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_LONG_RAW)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.LONGVARBINARY);
