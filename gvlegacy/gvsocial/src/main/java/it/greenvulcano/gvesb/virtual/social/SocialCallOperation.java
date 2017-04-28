@@ -39,11 +39,13 @@ import it.greenvulcano.gvesb.virtual.OperationKey;
  * @version 4.0.0 - Feb 2017
  * @author GreenVulcano Developer Team
  */
+
 public class SocialCallOperation implements CallOperation{
     private static Logger logger = LoggerFactory.getLogger(SocialCallOperation.class);
+    
 	private String social;
     private String              name     = null;
-    private OperationKey        key                    = null;
+    private OperationKey        key      = null;
 
 	@Override
 	public void init(Node node) throws InitializationException {
@@ -57,6 +59,11 @@ public class SocialCallOperation implements CallOperation{
         }
 	}
 	
+	/**
+	 * 
+	 * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
+	 */
+
 	@Override
 	public GVBuffer perform(GVBuffer gvBuffer) throws ConnectionException,
 			CallException, InvalidDataException {
