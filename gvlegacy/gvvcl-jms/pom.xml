@@ -80,7 +80,8 @@
 							it.greenvulcano.gvesb.j2ee,
 							it.greenvulcano.gvesb.virtual,
 							it.greenvulcano.util.clazz,
-							it.greenvulcano.util.thread
+							it.greenvulcano.util.thread,
+                                                        it.greenvulcano.util.metadata
                         </Import-Package>
                     </instructions>
                 </configuration>
