@@ -75,6 +75,7 @@ public class TwitterSocialAdapterAccount implements SocialAdapterAccount{
 			accountName = XMLConfig.get(node, "@name");
 			consumerKey = XMLConfig.get(node, "@consumer_key");
 			consumerSecret = XMLConfig.get(node, "@consumer_secret");
+			
 			FileInputStream fis = new FileInputStream(realPath);
 			Properties props = new Properties();
 			props.load(fis);

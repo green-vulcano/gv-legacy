@@ -25,6 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.greenvulcano.gvesb.virtual.OperationFactory;
+import it.greenvulcano.gvesb.virtual.social.twitter.TwitterDisableNotificationCallOperation;
+import it.greenvulcano.gvesb.virtual.social.twitter.TwitterEnableNotificationCallOperation;
+import it.greenvulcano.gvesb.virtual.social.twitter.TwitterGetFollowersIDsCallOperation;
+import it.greenvulcano.gvesb.virtual.social.twitter.TwitterGetFriendsIDsCallOperation;
+import it.greenvulcano.gvesb.virtual.social.twitter.TwitterGetUserTimelineCallOperation;
+import it.greenvulcano.gvesb.virtual.social.twitter.TwitterRetweetStatusCallOperation;
+import it.greenvulcano.gvesb.virtual.social.twitter.TwitterSendDirectMessageCallOperation;
+import it.greenvulcano.gvesb.virtual.social.twitter.TwitterUpdateStatusCallOperation;
 
 /*
  * @version 4.0.0 - Feb 2017
@@ -40,7 +48,14 @@ public class Activator implements BundleActivator {
 	 * 			The execution context of the bundle being started.
 	 */
     public void start(BundleContext context) throws Exception {
-    	OperationFactory.registerSupplier("social-call", SocialCallOperation::new);
+    	OperationFactory.registerSupplier("Twitter-update-status", TwitterUpdateStatusCallOperation::new);
+    	OperationFactory.registerSupplier("Twitter-retweet-status", TwitterRetweetStatusCallOperation::new);
+    	OperationFactory.registerSupplier("Twitter-enable-notification", TwitterEnableNotificationCallOperation::new);
+    	OperationFactory.registerSupplier("Twitter-disable-notification", TwitterDisableNotificationCallOperation::new);
+    	OperationFactory.registerSupplier("Twitter-get-followers-ids", TwitterGetFollowersIDsCallOperation::new);
+    	OperationFactory.registerSupplier("Twitter-get-friends-ids", TwitterGetFriendsIDsCallOperation::new);
+    	OperationFactory.registerSupplier("Twitter-send-direct-message", TwitterSendDirectMessageCallOperation::new);
+    	OperationFactory.registerSupplier("Twitter-get-user-timeline", TwitterGetUserTimelineCallOperation::new);
 		LOG.debug("*********** GV Social Up&Runnig");
     }
 
@@ -50,7 +65,14 @@ public class Activator implements BundleActivator {
      * 			The execution context of the bundle being stopped.
      */
     public void stop(BundleContext context) throws Exception {
-    	OperationFactory.unregisterSupplier("social-call");
+    	OperationFactory.unregisterSupplier("Twitter-update-status");
+    	OperationFactory.unregisterSupplier("Twitter-retweet-status");
+    	OperationFactory.unregisterSupplier("Twitter-enable-notification");
+    	OperationFactory.unregisterSupplier("Twitter-disable-notification");
+    	OperationFactory.unregisterSupplier("Twitter-get-followers-ids");
+    	OperationFactory.unregisterSupplier("Twitter-get-friends-ids");
+    	OperationFactory.unregisterSupplier("Twitter-send-direct-message");
+    	OperationFactory.unregisterSupplier("Twitter-get-user-timeline");
 		LOG.debug("*********** GV Social Stopped");
     }
 

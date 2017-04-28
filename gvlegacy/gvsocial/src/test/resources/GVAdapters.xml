@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE GVAdapters SYSTEM "http://www.greenvulcano.com/gvesb/dtds/GVAdapters.dtd">
+
+<GVAdapters version="1.0">
+    <GVDataHandlerConfiguration version="1.0" type="module" name="DH_ENGINE">
+    </GVDataHandlerConfiguration>
+
+                      <!-- PROVA BIRT -->
+    <GVBIRTReportConfiguration version="1.0" type="module" name="BIRT_REPO">
+        <Engine reportEngineHome="${{gv.app.home}}BIRTReportEngine" logLevel="INFO">
+            <Renders>
+                <ExcelReportRender type="report-render" class="it.greenvulcano.birt.report.internal.ExcelReportRenderOptions"/>
+                <PDFReportRender type="report-render" class="it.greenvulcano.birt.report.internal.PDFReportRenderOptions"/>
+                <HTMLReportRender type="report-render" class="it.greenvulcano.birt.report.internal.HTMLReportRenderOptions"/>
+            </Renders>
+        </Engine>
+        <ReportGroups>
+            <ReportGroup name="TestGRP">
+                <Report name="Sales Invoice Expr" config="SalesInvoice.rptdesign" type="report">
+                     <Parameters>
+                        <Parameter name="OrderNumber" expression="@java.lang.Integer@parseInt(#params.get(&apos;ORDER_NUMBER&apos;))" >
+                        	<StringSource type="source" class="it.greenvulcano.birt.report.internal.field.StringSource" />
+                        </Parameter>
+                    </Parameters>
+                </Report>
+                <Report name="Sales Invoice Excel" config="SalesInvoice.rptdesign" type="report">
+                    <Renders>
+                        <ExcelReportRender class="it.greenvulcano.birt.report.internal.ExcelReportRenderOptions" type="report-render">
+                            <Options>
+                                <Option name="sheet_name" value="'Sales Invoice'"></Option>
+                            </Options>
+                        </ExcelReportRender>
+                    </Renders>
+                    <Parameters>
+                        <Parameter name="OrderNumber" expression="@java.lang.Integer@parseInt(#params.get(&apos;ORDER_NUMBER&apos;))" />
+                    </Parameters>
+                </Report>
+                <Report name="Sales Invoice Param" config="SalesInvoice.rptdesign" type="report"/>
+            </ReportGroup>
+        </ReportGroups>
+    </GVBIRTReportConfiguration>
+
+                              <!-- PROVA RSH -->
+    <RSHServiceClientConfiguration name="RSH_CLIENT" type="module" version="1.0">
+      <RSHServiceClientLocal class="it.greenvulcano.gvesb.rsh.client.impl.RSHServiceClientLocal"
+                             name="RSHLocal" type="rshClient"/>
+          <RSHServiceClientRMI class="it.greenvulcano.gvesb.rsh.client.impl.RSHServiceClientRMI"
+                               regSvcName="it.greenvulcano.gvesb.rsh.server.rmi.RSHService"
+                               regCtxFactory="com.sun.jndi.rmi.registry.RegistryContextFactory"
+                               name="RSHRemote" regURL="rmi://localhost:3099/"
+                               type="rshClient"/>
+      </RSHServiceClientConfiguration>
+
+                               <!-- PROVA GVSOCIAL -->
+
+   <GVSocialAdapterManager name="GV_SOCIAL" type="module">
+     <SocialAdapters>
+        <TwitterSocialAdapter class="it.greenvulcano.gvesb.....TwitterSocialAdapter"
+                             social="twitter" type="social-adapter">
+            <Accounts>
+                <Account name="ACCOUNT_NAME" consumer_key="..." consumer_secret="..." twitteruserid="..."/>
+                <!-- ... -->
+            </Accounts>
+            <!-- ... -->
+            <Proxy proxyHost="" proxyPassword="" proxyPort="" proxyUser=""/>
+        </TwitterSocialAdapter>
+     </SocialAdapters>
+   </GVSocialAdapterManager>
+</GVAdapters>

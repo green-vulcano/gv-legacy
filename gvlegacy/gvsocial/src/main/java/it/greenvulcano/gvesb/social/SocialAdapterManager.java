@@ -137,11 +137,23 @@ public class SocialAdapterManager implements ConfigurationListener {
 		account.setPINAndSave(PIN);
 	}
 
+	/**
+	 * @param socialName
+	 * @param accountName
+	 * @return Tokens
+	 * @throws SocialAdapterException
+	 */
 	public Tokens getRequestTokenAndURL(String socialName, String accountName) throws SocialAdapterException{
 		SocialAdapterAccount account = getSocialAccount(socialName, accountName);
 		return account.getRequestTokenAndURL();
 	}
 
+	/**
+	 * @param socialName
+	 * @param accountName
+	 * @return SocialAdapterAccount
+	 * @throws SocialAdapterException
+	 */
 	private SocialAdapterAccount getSocialAccount(String socialName, String accountName) throws SocialAdapterException {
 		SocialAdapter adapter = this.getAdapter(socialName);
 		SocialAdapterAccount account = null;

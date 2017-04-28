@@ -79,7 +79,7 @@ public abstract class SocialAdapter {
 	 *   &lt;/operationName&gt; <br>
 	 *   &lt;flagGlobalErrors/&gt; <br>
 	 * &lt;/SocialServiceResponse&gt; <br>
-
+	 * 
 	 * @param buffer
 	 * @return
 	 * @throws SocialAdapterException 
@@ -90,7 +90,7 @@ public abstract class SocialAdapter {
 		try {
 			output = buffer;
 			// ogni nodo corrisponde ad un'operazione su un account e contiene i sottonodi attribute
-			Node input = XMLUtils.parseObject_S(buffer.getObject(), false, true);
+			Node input = XMLUtils.parseObject_S(buffer.getObject(), false, true);//TODO qui crasha
 			NodeList operations = (NodeList) XMLConfig.getNodeList(input, "/*/*[@account]") ;
 			SocialAdapterAccount account;
 			// Map per memorizzare i metodi evitando di riusare la reflection

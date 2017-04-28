@@ -96,6 +96,11 @@
             <version>4.0.6</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+   			<groupId>bouncycastle</groupId>
+    		<artifactId>bouncycastle-jce-jdk13</artifactId>
+    		<version>112</version>
+		</dependency>
         
         <!-- *************** TEST *************** -->
         
@@ -137,7 +142,8 @@
 							it.greenvulcano.util.xml,
                             org.osgi.framework,
 							org.slf4j,
-							org.w3c.dom
+							org.w3c.dom,
+							javax.crypto
                         </Import-Package>
                         <Embed-Dependency>*;scope=compile;type=jar</Embed-Dependency>
 						<Embed-Transitive>true</Embed-Transitive>
