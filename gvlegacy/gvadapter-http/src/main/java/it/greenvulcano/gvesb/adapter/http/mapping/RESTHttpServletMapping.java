@@ -378,7 +378,7 @@ public class RESTHttpServletMapping implements HttpServletMapping
                 request.setProperty(n, ((v != null) && !"".equals(v)) ? v : "NULL");
             }
 
-            String ct = Optional.of(req.getContentType()).orElse("");
+            String ct = Optional.ofNullable(req.getContentType()).orElse("");
             request.setProperty("HTTP_REQ_CONTENT_TYPE", ct.isEmpty() ? ct : "NULL");
             String acc = req.getHeader("Accept");
             request.setProperty("HTTP_REQ_ACCEPT", (acc != null) ? acc : "NULL");
