@@ -33,6 +33,7 @@ import it.greenvulcano.gvesb.virtual.EnqueueOperation;
 import it.greenvulcano.gvesb.virtual.InitializationException;
 import it.greenvulcano.gvesb.virtual.InvalidDataException;
 import it.greenvulcano.gvesb.virtual.VCLException;
+import it.greenvulcano.util.metadata.PropertiesHandler;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
@@ -243,6 +244,10 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
         Message message = null;
         
             try {
+            	
+            	
+            	destinationName = PropertiesHandler.expand(destinationName, gvBuffer);
+            	
                 if (refDP != null && !"".equals(refDP.trim())) {
                     // Enqueue operation uses DataProvider to create message to
                     // send/publish.
@@ -335,6 +340,7 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                 throw new J2EEEnqueueException("GVVCL_J2EE_ENQUEUE_ERROR", new String[][]{{"exc", exc.toString()}}, exc);
             }
             if (isQueue) {
+            	logger.debug("Creating queue for destination "+destinationName);
                 Queue lQueue = session.createQueue(destinationName);
                 if (session instanceof XAQueueSession) {
                     messageProducer = ((XAQueueSession) session).createProducer(lQueue);
@@ -349,6 +355,7 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                 }
             }
             else {
+            	logger.debug("Creating topic for destination "+destinationName);
                 Topic lTopic = session.createTopic(destinationName);
                 if (session instanceof XATopicSession) {
                     messageProducer = ((XATopicSession) session).createProducer(lTopic);
