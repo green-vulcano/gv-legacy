@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GVDelete.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GreenVulcano VCL File Plugin</a> &gt; <a href="index.source.html" class="el_package">it.greenvulcano.gvesb.virtual.file.remote.command</a> &gt; <span class="el_source">GVDelete.java</span></div><h1>GVDelete.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2009-2017 GreenVulcano ESB Open Source Project. All rights
+ * reserved.
+ * 
+ * This file is part of GreenVulcano ESB.
+ * 
+ * GreenVulcano ESB is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ * 
+ * GreenVulcano ESB is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GreenVulcano ESB. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package it.greenvulcano.gvesb.virtual.file.remote.command;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.buffer.GVBuffer;
+import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
+import it.greenvulcano.util.metadata.PropertiesHandler;
+import it.greenvulcano.util.remotefs.RemoteManager;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+/**
+ * Delete file/directory on remote file system.
+ * 
+ * @version 4.0.0 Mar, 2017
+ * @author GreenVulcano Developer Team
+ * 
+ *         REVISON OK
+ */
+public class GVDelete implements GVRemoteCommand
+{
+<span class="nc" id="L46">    private static Logger logger = LoggerFactory.getLogger(GVDelete.class);</span>
+
+    /**
+     *  Absolute path of the file/directory to remove.
+     */
+    private String              targetPath;
+    
+    /**
+     * File name to remove. Might contain a regular expression. 
+     * It is used only if &lt;code&gt;targetPath&lt;/code&gt; is a directory, and if empty the filter is ignored.
+     */
+    private String              filePattern;
+    
+    /**
+     * If true an internal error interrupt the command sequence. Default true.
+     */
+    private boolean             isCritical;
+<span class="nc" id="L63">    private Map&lt;String, String&gt; optProperties = new HashMap&lt;String, String&gt;();</span>
+
+    /**
+     * do nothing
+     */
+    public GVDelete()
+<span class="nc" id="L69">    {</span>
+        // do nothing
+<span class="nc" id="L71">    }</span>
+
+    /**
+     * Invoked from &lt;code&gt;RemoteManagerCall&lt;/code&gt; when the Command
+     * needs initialization.&lt;br&gt;
+     *
+     * @param node
+     * 			The configuration node containing all informations.
+     * 
+     * @see it.greenvulcano.gvesb.virtual.file.remote.command.GVRemoteCommand#init(org.w3c.dom.Node)
+     * 
+     * @throws Exception
+     */
+    @Override
+    public void init(Node node) throws Exception
+    {
+<span class="nc" id="L87">        targetPath = XMLConfig.get(node, &quot;@targetPath&quot;);</span>
+<span class="nc" id="L88">        filePattern = XMLConfig.get(node, &quot;@filePattern&quot;, &quot;&quot;);</span>
+<span class="nc" id="L89">        isCritical = XMLConfig.getBoolean(node, &quot;@isCritical&quot;, true);</span>
+        
+<span class="nc" id="L91">        NodeList nl = XMLConfig.getNodeList(node, &quot;PropertyDef&quot;);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (nl != null) {</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            for (int i = 0; i &lt; nl.getLength(); i++) {</span>
+<span class="nc" id="L94">                String name = XMLConfig.get(nl.item(i), &quot;@name&quot;);</span>
+<span class="nc" id="L95">                String value = XMLConfig.get(nl.item(i), &quot;@value&quot;, &quot;&quot;);</span>
+<span class="nc" id="L96">                optProperties.put(name, value);</span>
+            }
+        }
+<span class="nc" id="L99">    }</span>
+
+    /**
+     * check &lt;code&gt;filePattern&lt;/code&gt;
+     * 
+     * @see java.lang.Object#toString()
+     * 
+     * @return String
+     */
+    @Override
+    public String toString()
+    {
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (filePattern.equals(&quot;&quot;)) {</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            return ((isCritical ? &quot;[CRITICAL] &quot; : &quot;&quot;) + &quot;DELETE directory/file &quot; + targetPath);</span>
+        }
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        return ((isCritical ? &quot;[CRITICAL] &quot; : &quot;&quot;) + &quot;DELETE files '&quot; + filePattern + &quot;' from directory &quot; + targetPath);</span>
+    }
+
+    /**
+     *  Invoked from &lt;code&gt;RemoteManagerCall&lt;/code&gt; when the Command
+     * needs to be execute.&lt;br&gt;
+     * 
+     * @param gvBuffer
+     * 			The GVBuffer to be used within the service
+     * 
+     * @param manager
+     * 			 A private instance of &lt;code&gt;RemoteManager&lt;/code&gt; class to perform FTP
+     * 			 operations.
+     * 
+     * @see it.greenvulcano.gvesb.virtual.file.remote.command.GVRemoteCommand#executeOperation(it.greenvulcano.util.remotefs.RemoteManager,
+     *      it.greenvulcano.gvesb.buffer.GVBuffer)
+     *      
+     * @throws Exception
+     */
+    @Override
+    public void execute(RemoteManager manager, GVBuffer gvBuffer) throws Exception
+    {
+        try {
+<span class="nc" id="L137">            PropertiesHandler.enableExceptionOnErrors();</span>
+<span class="nc" id="L138">            Map&lt;String, Object&gt; params = GVBufferPropertiesHelper.getPropertiesMapSO(gvBuffer, true);</span>
+<span class="nc" id="L139">            String currTargetPath = PropertiesHandler.expand(targetPath, params, gvBuffer);</span>
+<span class="nc" id="L140">            String currFile = PropertiesHandler.expand(filePattern, params, gvBuffer);</span>
+
+<span class="nc" id="L142">            Map&lt;String, String&gt; localOptProperties = new HashMap&lt;String, String&gt;();</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            for (String prop : optProperties.keySet()) {</span>
+<span class="nc" id="L144">                localOptProperties.put(prop, PropertiesHandler.expand(optProperties.get(prop), params, gvBuffer));</span>
+<span class="nc" id="L145">            }</span>
+            
+<span class="nc" id="L147">            boolean result = manager.rm(currTargetPath, currFile, localOptProperties);</span>
+
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            if (result) {</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                if (filePattern.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L151">                    logger.debug(&quot;Directory/file &quot; + currTargetPath + &quot; successfully deleted&quot;);</span>
+                }
+                else {
+<span class="nc" id="L154">                    logger.debug(&quot;File '&quot; + currFile + &quot;' successfully deleted from directory &quot; + currTargetPath);</span>
+                }
+            }
+        }
+        finally {
+<span class="nc" id="L159">            PropertiesHandler.disableExceptionOnErrors();</span>
+<span class="nc" id="L160">        }</span>
+<span class="nc" id="L161">    }</span>
+
+    /**
+     * @see it.greenvulcano.gvesb.virtual.file.remote.command.GVRemoteCommand#isCritical()
+     * 
+     * @return boolean &lt;code&gt;isCritical&lt;/code&gt;
+     */
+    @Override
+    public boolean isCritical()
+    {
+<span class="nc" id="L171">        return isCritical;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

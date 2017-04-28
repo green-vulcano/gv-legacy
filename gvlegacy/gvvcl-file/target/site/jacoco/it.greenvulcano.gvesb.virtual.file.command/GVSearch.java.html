@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GVSearch.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GreenVulcano VCL File Plugin</a> &gt; <a href="index.source.html" class="el_package">it.greenvulcano.gvesb.virtual.file.command</a> &gt; <span class="el_source">GVSearch.java</span></div><h1>GVSearch.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2009-2017 GreenVulcano ESB Open Source Project. All rights
+ * reserved.
+ * 
+ * This file is part of GreenVulcano ESB.
+ * 
+ * GreenVulcano ESB is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ * 
+ * GreenVulcano ESB is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GreenVulcano ESB. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package it.greenvulcano.gvesb.virtual.file.command;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.buffer.GVBuffer;
+import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
+import it.greenvulcano.util.file.FileManager;
+import it.greenvulcano.util.file.FileNameSorter;
+import it.greenvulcano.util.file.FileProperties;
+import it.greenvulcano.util.metadata.PropertiesHandler;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
+
+/**
+ * 
+ * Search for files.
+ * 
+ * @version 4.0.0 Mar, 2017
+ * @author GreenVulcano Developer Team
+ * 
+ * 
+ */
+public class GVSearch implements GVFileCommand
+{
+<span class="fc" id="L52">    private static Logger logger = LoggerFactory.getLogger(GVSearch.class);</span>
+
+    /**
+     * Absolute path of the directory to search in.
+     */
+    private String        sourcePath;
+    
+    /**
+     * File name to search for. Can be a regular expression. 
+     */
+    private String        filePattern;
+    
+    /**
+     * If true the found files are inserted in list with full path. Default false. 
+     */
+    private boolean       returnFullPath;
+    
+    /**
+     * If true an internal error interrupts the command sequence. Default true.
+     */
+    private boolean       isCritical;
+
+    /**
+     * do nothing
+     */
+    public GVSearch()
+<span class="fc" id="L78">    {</span>
+        // do nothing
+<span class="fc" id="L80">    }</span>
+
+    /**
+     * Invoked from &lt;code&gt;FileManagerCall&lt;/code&gt; when the Command
+     * needs initialization.&lt;br&gt;
+     * 
+     * @param node
+     * 			The configuration node containing all informations.
+     * 
+     * @see it.greenvulcano.gvesb.virtual.file.command.GVFileCommand#init(org.w3c.dom.Node)
+     * 
+     * @throws Exception
+     */
+    @Override
+    public void init(Node node) throws Exception
+    {
+<span class="fc" id="L96">        sourcePath = XMLConfig.get(node, &quot;@sourcePath&quot;);</span>
+<span class="fc" id="L97">        filePattern = XMLConfig.get(node, &quot;@filePattern&quot;, &quot;&quot;);</span>
+<span class="fc" id="L98">        returnFullPath = XMLConfig.getBoolean(node, &quot;@returnFullPath&quot;, false);</span>
+<span class="fc" id="L99">        isCritical = XMLConfig.getBoolean(node, &quot;@isCritical&quot;, true);</span>
+<span class="fc" id="L100">    }</span>
+
+    /**
+     * check &lt;code&gt;filePattern&lt;/code&gt;
+     * 
+     * @see java.lang.Object#toString()
+     * 
+     * @return String
+     */
+    @Override
+    public String toString()
+    {
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        return ((isCritical ? &quot;[CRITICAL] &quot; : &quot;&quot;) + &quot;CHECK for existence of file '&quot; + filePattern + &quot;' in directory &quot; + sourcePath);</span>
+    }
+
+    /**
+     * Invoked from &lt;code&gt;FileManagerCall&lt;/code&gt; when the Command
+     * needs to be execute.&lt;br&gt;
+     * 
+     * @param gvBuffer
+     * 			The GVBuffer to be used within the service
+     * 
+     * @see it.greenvulcano.gvesb.virtual.file.command.GVFileCommand#execute(it.greenvulcano.gvesb.buffer.GVBuffer)
+     * 
+     * @throws Exception
+     */
+    @Override
+    public void execute(GVBuffer gvBuffer) throws Exception
+    {
+        try {
+<span class="fc" id="L130">            PropertiesHandler.enableExceptionOnErrors();</span>
+<span class="fc" id="L131">            Map&lt;String, Object&gt; params = GVBufferPropertiesHelper.getPropertiesMapSO(gvBuffer, true);</span>
+<span class="fc" id="L132">            String currSourcePath = PropertiesHandler.expand(sourcePath, params, gvBuffer);</span>
+<span class="fc" id="L133">            String currFile = PropertiesHandler.expand(filePattern, params, gvBuffer);</span>
+
+<span class="fc" id="L135">            Set&lt;FileProperties&gt; results = FileManager.ls(currSourcePath, currFile);</span>
+<span class="fc" id="L136">            int resultsSize = results.size();</span>
+
+<span class="fc" id="L138">            gvBuffer.setProperty(GVFM_FOUND_FILES_NUM, &quot;&quot; + resultsSize);</span>
+            
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">            boolean result = (resultsSize &gt; 0);</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">            if (result) {</span>
+<span class="fc" id="L142">                StringBuilder buf = new StringBuilder();</span>
+<span class="fc" id="L143">                List&lt;FileProperties&gt; fm_files = new ArrayList&lt;FileProperties&gt;(resultsSize);</span>
+<span class="fc" id="L144">                fm_files.addAll(results);</span>
+<span class="fc" id="L145">                Collections.sort(fm_files, new FileNameSorter(true));</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">                for (FileProperties currFileInfo : fm_files) {</span>
+<span class="fc" id="L147">                    String filename = currFileInfo.getName();</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">                    if (returnFullPath) {</span>
+<span class="nc" id="L149">                        buf.append(currSourcePath).append(File.separator);</span>
+                    }
+<span class="fc" id="L151">                    buf.append(filename).append(&quot;;&quot;);</span>
+<span class="fc" id="L152">                }</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">                if (buf.length() &gt; 1) {</span>
+<span class="fc" id="L154">                    buf.deleteCharAt(buf.length() - 1);</span>
+                }
+<span class="fc" id="L156">                logger.debug(&quot;File (&quot; + resultsSize + &quot;) matching the pattern '&quot; + currFile</span>
+                        + &quot;' found within directory &quot; + currSourcePath);
+<span class="fc" id="L158">                logger.debug(buf.toString());</span>
+<span class="fc" id="L159">                gvBuffer.setProperty(GVFM_FOUND_FILES_LIST, buf.toString());</span>
+            }
+        }
+        finally {
+<span class="pc" id="L163">            PropertiesHandler.disableExceptionOnErrors();</span>
+<span class="fc" id="L164">        }</span>
+<span class="fc" id="L165">    }</span>
+
+    /**
+     * @see it.greenvulcano.gvesb.virtual.file.command.GVFileCommand#isCritical()
+     * 
+     * @return boolean &lt;code&gt;isCritical&lt;/code&gt;
+     */
+    @Override
+    public boolean isCritical()
+    {
+<span class="nc" id="L175">        return isCritical;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

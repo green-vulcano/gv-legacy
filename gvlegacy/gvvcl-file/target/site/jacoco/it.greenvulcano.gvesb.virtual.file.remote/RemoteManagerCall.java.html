@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoteManagerCall.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GreenVulcano VCL File Plugin</a> &gt; <a href="index.source.html" class="el_package">it.greenvulcano.gvesb.virtual.file.remote</a> &gt; <span class="el_source">RemoteManagerCall.java</span></div><h1>RemoteManagerCall.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2009-2017 GreenVulcano ESB Open Source Project. All rights
+ * reserved.
+ * 
+ * This file is part of GreenVulcano ESB.
+ * 
+ * GreenVulcano ESB is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ * 
+ * GreenVulcano ESB is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GreenVulcano ESB. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package it.greenvulcano.gvesb.virtual.file.remote;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.buffer.GVBuffer;
+import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
+import it.greenvulcano.gvesb.virtual.CallException;
+import it.greenvulcano.gvesb.virtual.CallOperation;
+import it.greenvulcano.gvesb.virtual.ConnectionException;
+import it.greenvulcano.gvesb.virtual.InitializationException;
+import it.greenvulcano.gvesb.virtual.InvalidDataException;
+import it.greenvulcano.gvesb.virtual.OperationKey;
+import it.greenvulcano.gvesb.virtual.file.remote.command.GVRemoteCommand;
+import it.greenvulcano.util.remotefs.RemoteManager;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+/**
+ * Executes sequences of Command on remote file system.
+ * 
+ * @version 4.0.0 Mar, 2017
+ * @author GreenVulcano Developer Team
+ * 
+ * 
+ */
+<span class="fc" id="L51">public class RemoteManagerCall implements CallOperation</span>
+{
+<span class="fc" id="L53">    private static final Logger   logger   = LoggerFactory.getLogger(RemoteManagerCall.class);</span>
+
+    /**
+     * The module instance's name.
+     */
+<span class="fc" id="L58">    private String                name     = null;</span>
+
+    /**
+     * A private instance of &lt;code&gt;RemoteManager&lt;/code&gt; class to perform FTP
+     * operations.
+     */
+<span class="fc" id="L64">    private RemoteManager         manager  = null;</span>
+
+    /**
+     * A List contains the istances of remote-commands
+     */
+<span class="fc" id="L69">    private List&lt;GVRemoteCommand&gt; commands = new ArrayList&lt;GVRemoteCommand&gt;();</span>
+
+    /**
+     * The configured operation's key.
+     */
+<span class="fc" id="L74">    protected OperationKey        key      = null;</span>
+
+    /**
+     * Invoked from &lt;code&gt;OperationFactory&lt;/code&gt; when an &lt;code&gt;Operation&lt;/code&gt;
+     * needs initialization.&lt;br&gt;
+     * 
+     * @param node
+     * 			The configuration node containing all informations.
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
+     * 
+     * @throws InitializationException
+     */
+    @Override
+    public void init(Node node) throws InitializationException
+    {
+        try {
+<span class="fc" id="L91">            name = XMLConfig.get(node, &quot;@name&quot;);</span>
+
+<span class="fc" id="L93">            Node nm = XMLConfig.getNode(node, &quot;*[@type='remote-manager']&quot;);</span>
+<span class="fc" id="L94">            manager = (RemoteManager) Class.forName(XMLConfig.get(nm, &quot;@class&quot;)).newInstance();</span>
+<span class="fc" id="L95">            manager.init(nm);</span>
+
+<span class="fc" id="L97">            logger.debug(&quot;BEGIN RemoteManagerCall[&quot; + name + &quot;] initialization&quot;);</span>
+<span class="fc" id="L98">            NodeList nl = XMLConfig.getNodeList(node, &quot;RemoteCommands/*[@type='remote-command']&quot;);</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            for (int i = 0; i &lt; nl.getLength(); i++) {</span>
+<span class="fc" id="L100">                Node cmdNode = nl.item(i);</span>
+<span class="fc" id="L101">                GVRemoteCommand comm = (GVRemoteCommand) Class.forName(XMLConfig.get(cmdNode, &quot;@class&quot;)).newInstance();</span>
+<span class="fc" id="L102">                comm.init(cmdNode);</span>
+<span class="fc" id="L103">                logger.debug(&quot;Initialized Command: &quot; + comm);</span>
+<span class="fc" id="L104">                commands.add(comm);</span>
+            }
+<span class="fc" id="L106">            logger.debug(&quot;END RemoteManagerCall[&quot; + name + &quot;] initialization&quot;);</span>
+        }
+<span class="nc" id="L108">        catch (Exception exc) {</span>
+<span class="nc" id="L109">            logger.error(&quot;ERROR RemoteManagerCall[&quot; + name + &quot;] initialization&quot;, exc);</span>
+<span class="nc" id="L110">            throw new InitializationException(&quot;GV_CONF_ERROR&quot;, new String[][]{{&quot;message&quot;, exc.getMessage()}}, exc);</span>
+<span class="fc" id="L111">        }</span>
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * @param gvBuffer 
+     * 			The GVBuffer to be used within the service
+     * 
+     * @return the GVBuffer
+     * 
+     * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
+     * 
+     * @throws ConnectionException, CallException, InvalidDataException
+     */
+    @Override
+    public GVBuffer perform(GVBuffer gvBuffer) throws ConnectionException, CallException, InvalidDataException
+    {
+<span class="fc" id="L127">        Map&lt;String, String&gt; props = GVBufferPropertiesHelper.getPropertiesMapSS(gvBuffer, true);</span>
+        try {        	
+<span class="fc" id="L129">            manager.connect(props);</span>
+
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            for (GVRemoteCommand command : commands) {</span>
+                try {
+<span class="fc" id="L133">                    command.execute(manager, gvBuffer);</span>
+                }
+<span class="nc" id="L135">                catch (Exception exc) {</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                    if (command.isCritical()) {</span>
+<span class="nc" id="L137">                        logger.error(&quot;CRITICAL Command &quot; + command.getClass().getSimpleName()</span>
+                                + &quot; failed execution, exiting&quot;);
+<span class="nc" id="L139">                        throw exc;</span>
+                    }
+<span class="nc" id="L141">                    continue;</span>
+<span class="fc" id="L142">                }</span>
+<span class="fc" id="L143">            }</span>
+
+<span class="fc" id="L145">            return gvBuffer;</span>
+        }
+<span class="nc" id="L147">        catch (Exception exc) {</span>
+<span class="nc" id="L148">            logger.error(&quot;ERROR RemoteManagerCall[&quot; + name + &quot;] execution&quot;, exc);</span>
+<span class="nc" id="L149">            throw new CallException(&quot;GV_CALL_SERVICE_ERROR&quot;, new String[][]{{&quot;service&quot;, gvBuffer.getService()},</span>
+<span class="nc" id="L150">                    {&quot;system&quot;, gvBuffer.getSystem()}, {&quot;id&quot;, gvBuffer.getId().toString()},</span>
+<span class="nc" id="L151">                    {&quot;message&quot;, exc.getMessage()}}, exc);</span>
+        }
+        finally {
+<span class="pc" id="L154">            manager.disconnect(props);</span>
+        }
+    }
+
+
+    /**
+     * do nothing
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#cleanUp()
+     */
+    @Override
+    public void cleanUp()
+    {
+        // do nothing
+<span class="nc" id="L168">    }</span>
+
+    /**
+     * do nothing
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#destroy()
+     */
+    @Override
+    public void destroy()
+    {
+        // do nothing
+<span class="nc" id="L179">    }</span>
+
+    /**
+     * Set the configured operation key
+     * 
+     * @param key
+     * 			the configured operation key
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#setKey(it.greenvulcano.gvesb.virtual.OperationKey)
+     */
+    @Override
+    public void setKey(OperationKey key)
+    {
+<span class="nc" id="L192">        this.key = key;</span>
+<span class="nc" id="L193">    }</span>
+
+    /**
+     * Return the configured operation key
+     * 
+     * @return key
+     * 			the configured operation key
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#getKey()
+     */
+    @Override
+    public OperationKey getKey()
+    {
+<span class="nc" id="L206">        return key;</span>
+    }
+
+    /**
+     * Return the services of gvBuffer
+     * 
+     * @return the service of gvBuffer
+     * 
+     * @param gvBuffer
+     * 			The GVBuffer to be used within the service
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#getServiceAlias(it.greenvulcano.gvesb.buffer.GVBuffer)
+     */
+    @Override
+    public String getServiceAlias(GVBuffer data)
+    {
+<span class="nc" id="L222">        return data.getService();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

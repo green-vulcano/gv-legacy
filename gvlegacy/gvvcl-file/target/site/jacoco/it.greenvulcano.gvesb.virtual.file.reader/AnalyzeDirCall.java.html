@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalyzeDirCall.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GreenVulcano VCL File Plugin</a> &gt; <a href="index.source.html" class="el_package">it.greenvulcano.gvesb.virtual.file.reader</a> &gt; <span class="el_source">AnalyzeDirCall.java</span></div><h1>AnalyzeDirCall.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2009-2017 GreenVulcano ESB Open Source Project. All rights
+ * reserved.
+ * 
+ * This file is part of GreenVulcano ESB.
+ * 
+ * GreenVulcano ESB is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ * 
+ * GreenVulcano ESB is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GreenVulcano ESB. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package it.greenvulcano.gvesb.virtual.file.reader;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.buffer.GVBuffer;
+import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
+import it.greenvulcano.gvesb.virtual.CallException;
+import it.greenvulcano.gvesb.virtual.CallOperation;
+import it.greenvulcano.gvesb.virtual.ConnectionException;
+import it.greenvulcano.gvesb.virtual.InitializationException;
+import it.greenvulcano.gvesb.virtual.InvalidDataException;
+import it.greenvulcano.gvesb.virtual.OperationKey;
+import it.greenvulcano.util.file.monitor.AnalysisReport;
+import it.greenvulcano.util.file.monitor.FileSystemMonitor;
+
+
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
+
+/**
+ * The class perform a directory analysis and return a report describing it's
+ * status.
+ * 
+ * @version 4.0.0 Mar, 2017
+ * @author GreenVulcano Developer Team
+ * 
+ * 
+ */
+<span class="fc" id="L50">public class AnalyzeDirCall implements CallOperation</span>
+{
+<span class="fc" id="L52">    private static final Logger logger            = LoggerFactory.getLogger(AnalyzeDirCall.class);</span>
+
+    /**
+     * The instance name.
+     */
+<span class="fc" id="L57">    private String              name              = null;</span>
+
+    /**
+     * The configured operation key
+     */    
+<span class="fc" id="L62">    protected OperationKey      key               = null;</span>
+
+    /**
+     * A private instance of &lt;code&gt;FileSystemMonitor&lt;/code&gt; class to perform an
+     * analysis of a directory
+     */
+<span class="fc" id="L68">    private FileSystemMonitor   fileSystemMonitor = null;</span>
+
+
+    /**
+     * Invoked from &lt;code&gt;OperationFactory&lt;/code&gt; when an &lt;code&gt;Operation&lt;/code&gt;
+     * needs initialization.&lt;br&gt;
+     *
+     * @param node
+     * 			The configuration node containing all informations.
+     *
+     * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
+     * 
+     * @throws InitializationException
+     */
+    @Override
+    public void init(Node node) throws InitializationException
+    {
+        try {
+<span class="fc" id="L86">            name = XMLConfig.get(node, &quot;@name&quot;);</span>
+<span class="fc" id="L87">            Node fsNode = XMLConfig.getNode(node, &quot;*[@type='fs-monitor']&quot;);</span>
+<span class="fc" id="L88">            fileSystemMonitor = (FileSystemMonitor) Class.forName(XMLConfig.get(fsNode, &quot;@class&quot;)).newInstance();</span>
+<span class="fc" id="L89">            fileSystemMonitor.init(fsNode);</span>
+            
+<span class="fc" id="L91">            logger.info(&quot;AnalyzeDirCall &quot; + name + &quot; configured&quot;);</span>
+        }
+<span class="nc" id="L93">        catch (Exception exc) {</span>
+<span class="nc" id="L94">            logger.error(&quot;A generic error occurred while initializing&quot;, exc);</span>
+<span class="nc" id="L95">            throw new InitializationException(&quot;GV_CONFIGURATION_ERROR&quot;, new String[][]{{&quot;message&quot;, exc.getMessage()}},</span>
+                    exc);
+<span class="fc" id="L97">        }</span>
+<span class="fc" id="L98">    }</span>
+
+    /**
+     * @param gvBuffer 
+     * 			The GVBuffer to be used within the service
+     * @return the GVBuffer
+     * 
+     * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
+     * 
+     * @throws ConnectionException, CallException, InvalidDataException
+     */
+    @Override
+    public GVBuffer perform(GVBuffer gvBuffer) throws ConnectionException, CallException, InvalidDataException
+    {
+        try {
+<span class="fc" id="L113">            Map&lt;String, String&gt; props = GVBufferPropertiesHelper.getPropertiesMapSS(gvBuffer, true);</span>
+<span class="fc" id="L114">            AnalysisReport report = fileSystemMonitor.analyze(props);</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">            if (!report.resultsAvailable()) {</span>
+<span class="fc" id="L116">                logger.debug(&quot;No file detected on target directory [&quot; + report.getAnalysisDirectory() + &quot;]&quot;);</span>
+<span class="fc" id="L117">                gvBuffer.setProperty(&quot;GVFSM-REPORT_CREATED&quot;, &quot;true&quot;);</span>
+            }
+            else {
+<span class="nc" id="L120">                logger.debug(&quot;AnalyzeDirCall &quot; + name + &quot; create an XML report of directory [&quot;</span>
+<span class="nc" id="L121">                        + report.getAnalysisDirectory() + &quot;]&quot;);</span>
+<span class="nc" id="L122">                gvBuffer.setObject(report.toXML());</span>
+<span class="nc" id="L123">                gvBuffer.setProperty(&quot;GVFSM_REPORT_CREATED&quot;, &quot;true&quot;);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                if (report.getExistingFilesCount() != -1) {</span>
+<span class="nc" id="L125">                    gvBuffer.setProperty(&quot;GVFSM_EXISTING_FILES&quot;, &quot;&quot; + report.getExistingFilesCount());</span>
+                }
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                if (report.getCreatedFilesCount() != -1) {</span>
+<span class="nc" id="L128">                    gvBuffer.setProperty(&quot;GVFSM_CREATED_FILES&quot;, &quot;&quot; + report.getCreatedFilesCount());</span>
+                }
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                if (report.getModifiedFilesCount() != -1) {</span>
+<span class="nc" id="L131">                    gvBuffer.setProperty(&quot;GVFSM_MODIFIED_FILES&quot;, &quot;&quot; + report.getModifiedFilesCount());</span>
+                }
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                if (report.getDeletedFilesCount() != -1) {</span>
+<span class="nc" id="L134">                    gvBuffer.setProperty(&quot;GVFSM_DELETED_FILES&quot;, &quot;&quot; + report.getDeletedFilesCount());</span>
+                }
+            }
+<span class="fc" id="L137">            return gvBuffer;</span>
+        }
+<span class="nc" id="L139">        catch (Exception exc) {</span>
+<span class="nc" id="L140">            logger.error(&quot;An error occurred while analysing directory&quot;, exc);</span>
+<span class="nc" id="L141">            throw new CallException(&quot;GV_CALL_SERVICE_ERROR&quot;, new String[][]{{&quot;service&quot;, gvBuffer.getService()},</span>
+<span class="nc" id="L142">                    {&quot;system&quot;, gvBuffer.getSystem()}, {&quot;id&quot;, gvBuffer.getId().toString()},</span>
+<span class="nc" id="L143">                    {&quot;message&quot;, exc.getMessage()}}, exc);</span>
+        }
+    }
+
+
+    /**
+     * do nothing
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#cleanUp()
+     */
+    @Override
+    public void cleanUp()
+    {
+        // do nothing
+<span class="nc" id="L157">    }</span>
+
+    /**
+     * do nothing
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#destroy()
+     */
+    @Override
+    public void destroy()
+    {
+        // do nothing
+<span class="nc" id="L168">    }</span>
+
+    /**
+     * Set the configured operation key
+     * 
+     * @param key
+     * 			the configured operation key
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#setKey(it.greenvulcano.gvesb.virtual.OperationKey)
+     */
+    @Override
+    public void setKey(OperationKey key)
+    {
+<span class="nc" id="L181">        this.key = key;</span>
+<span class="nc" id="L182">    }</span>
+
+    /**
+     * Return the configured operation key
+     * 
+     * @return key
+     * 			the configured operation key
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#getKey()
+     */
+    @Override
+    public OperationKey getKey()
+    {
+<span class="nc" id="L195">        return key;</span>
+    }
+
+    /**
+     * Return the services of gvBuffer
+     * 
+     * @return the service of gvBuffer
+     * 
+     * @param gvBuffer
+     * 			The GVBuffer to be used within the service
+     * 
+     * @see it.greenvulcano.gvesb.virtual.Operation#getServiceAlias(it.greenvulcano.gvesb.buffer.GVBuffer)
+     */
+    @Override
+    public String getServiceAlias(GVBuffer gvBuffer)
+    {
+<span class="nc" id="L211">        return gvBuffer.getService();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

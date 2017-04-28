@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GVDownload.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GreenVulcano VCL File Plugin</a> &gt; <a href="index.source.html" class="el_package">it.greenvulcano.gvesb.virtual.file.remote.command</a> &gt; <span class="el_source">GVDownload.java</span></div><h1>GVDownload.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2009-2017 GreenVulcano ESB Open Source Project. All rights
+ * reserved.
+ * 
+ * This file is part of GreenVulcano ESB.
+ * 
+ * GreenVulcano ESB is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ * 
+ * GreenVulcano ESB is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GreenVulcano ESB. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package it.greenvulcano.gvesb.virtual.file.remote.command;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.expression.ognl.OGNLExpressionEvaluator;
+import it.greenvulcano.gvesb.buffer.GVBuffer;
+import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
+import it.greenvulcano.util.metadata.PropertiesHandler;
+import it.greenvulcano.util.remotefs.RemoteManager;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+/**
+ * Download a remote file/directory on local file system, or in the GVBuffer
+ * body.
+ * 
+ * @version 4.0.0 Mar, 2017
+ * @author GreenVulcano Developer Team
+ * 
+ * 
+ */
+public class GVDownload implements GVRemoteCommand
+{
+<span class="fc" id="L49">    private static final Logger logger = LoggerFactory.getLogger(GVDownload.class);</span>
+
+    /**
+     * Pathname of remote directory containing the file to download. 
+     * It can be an absolute pathname or relative, 
+     * in the second case it is relative to home directory of ftp user.
+     */
+    private String              remotePath;
+    
+    /**
+     * The name of the file to download.
+     */
+    private String              remoteFilePattern;
+    
+    /**
+     * GVBuffer OGNL expression used to specify how to handle the current downloaded file. 
+     * In the expression, the downloaded file will be referenced by the variable #input, 
+     * and will be a byte []. 
+     */
+    private String              toGVBufferExpression;
+    
+    /**
+     *  Pathname of the local directory to save the downloaded file. Must be an absolute pathname.
+     */
+    private String              targetPath;
+    
+    /**
+     * If true an internal error interrupt the command sequence. Default true.
+     */
+    private boolean             isCritical;
+<span class="fc" id="L79">    private Map&lt;String, String&gt; optProperties = new HashMap&lt;String, String&gt;();</span>
+
+    /**
+     * do nothing
+     */
+    public GVDownload()
+<span class="fc" id="L85">    {</span>
+        // do nothing
+<span class="fc" id="L87">    }</span>
+
+    /**
+     * Invoked from &lt;code&gt;RemoteManagerCall&lt;/code&gt; when the Command
+     * needs initialization.&lt;br&gt;
+     *
+     * @param node
+     * 			The configuration node containing all informations.
+     * 
+     * @see it.greenvulcano.gvesb.virtual.file.remote.command.GVRemoteCommand#init(org.w3c.dom.Node)
+     * 
+     * @throws Exception
+     */
+    @Override
+    public void init(Node node) throws Exception
+    {
+<span class="fc" id="L103">        remotePath = XMLConfig.get(node, &quot;@remotePath&quot;);</span>
+<span class="fc" id="L104">        remoteFilePattern = XMLConfig.get(node, &quot;@remoteFilePattern&quot;);</span>
+<span class="fc" id="L105">        toGVBufferExpression = XMLConfig.get(node, &quot;@toGVBufferExpression&quot;);</span>
+<span class="fc" id="L106">        targetPath = XMLConfig.get(node, &quot;@targetPath&quot;);</span>
+<span class="fc" id="L107">        isCritical = XMLConfig.getBoolean(node, &quot;@isCritical&quot;, true);</span>
+
+<span class="fc" id="L109">        NodeList nl = XMLConfig.getNodeList(node, &quot;PropertyDef&quot;);</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (nl != null) {</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">            for (int i = 0; i &lt; nl.getLength(); i++) {</span>
+<span class="nc" id="L112">                String name = XMLConfig.get(nl.item(i), &quot;@name&quot;);</span>
+<span class="nc" id="L113">                String value = XMLConfig.get(nl.item(i), &quot;@value&quot;, &quot;&quot;);</span>
+<span class="nc" id="L114">                optProperties.put(name, value);</span>
+            }
+        }
+<span class="fc" id="L117">    }</span>
+
+    /**
+     * check &lt;code&gt;filePattern&lt;/code&gt;
+     * 
+     * @see java.lang.Object#toString()
+     * 
+     * @return String
+     */
+    @Override
+    public String toString()
+    {
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (toGVBufferExpression != null) {</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">            return ((isCritical ? &quot;[CRITICAL] &quot; : &quot;&quot;) + &quot;DOWNLOAD remote file '&quot; + remoteFilePattern</span>
+                    + &quot;' from directory &quot; + remotePath + &quot; to GVBuffer body&quot;);
+        }
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        return ((isCritical ? &quot;[CRITICAL] &quot; : &quot;&quot;) + &quot;DOWNLOAD remote file(s) '&quot; + remoteFilePattern</span>
+                + &quot;' from directory &quot; + remotePath + &quot; to &quot; + targetPath);
+    }
+
+
+    /**
+     *  Invoked from &lt;code&gt;RemoteManagerCall&lt;/code&gt; when the Command
+     * needs to be execute.&lt;br&gt;
+     * 
+     * @param gvBuffer
+     * 			The GVBuffer to be used within the service
+     * 
+     * @param manager
+     * 			 A private instance of &lt;code&gt;RemoteManager&lt;/code&gt; class to perform FTP
+     * 			 operations.
+     * 
+     * @see it.greenvulcano.gvesb.virtual.file.remote.command.GVRemoteCommand#executeOperation(it.greenvulcano.util.remotefs.RemoteManager,
+     *      it.greenvulcano.gvesb.buffer.GVBuffer)
+     *      
+     * @throws Exception
+     */
+    @Override
+    public void execute(RemoteManager ftpAccess, GVBuffer gvBuffer) throws Exception
+    {
+        try {
+<span class="fc" id="L158">            PropertiesHandler.enableExceptionOnErrors();</span>
+<span class="fc" id="L159">            Map&lt;String, Object&gt; params = GVBufferPropertiesHelper.getPropertiesMapSO(gvBuffer, true);</span>
+<span class="fc" id="L160">            String currRemotePath = PropertiesHandler.expand(remotePath, params, gvBuffer);</span>
+<span class="fc" id="L161">            String currRemoteFile = PropertiesHandler.expand(remoteFilePattern, params, gvBuffer);</span>
+<span class="fc" id="L162">            String currTargetPath = PropertiesHandler.expand(targetPath, params, gvBuffer);</span>
+
+<span class="fc" id="L164">            Map&lt;String, String&gt; localOptProperties = new HashMap&lt;String, String&gt;();</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">            for (String prop : optProperties.keySet()) {</span>
+<span class="nc" id="L166">                localOptProperties.put(prop, PropertiesHandler.expand(optProperties.get(prop), params, gvBuffer));</span>
+<span class="nc" id="L167">            }</span>
+            
+<span class="fc" id="L169">            boolean result = true;</span>
+<span class="pc bpc" id="L170" title="1 of 4 branches missed.">            if ((toGVBufferExpression != null) &amp;&amp; (toGVBufferExpression.length() &gt; 0)) {</span>
+<span class="fc" id="L171">                ByteArrayOutputStream outputDataStream = new ByteArrayOutputStream();</span>
+<span class="fc" id="L172">                result = ftpAccess.get(currRemotePath, currRemoteFile, outputDataStream, localOptProperties);</span>
+<span class="fc" id="L173">                outputDataStream.close();</span>
+<span class="fc" id="L174">                OGNLExpressionEvaluator ognl = new OGNLExpressionEvaluator();</span>
+<span class="fc" id="L175">                ognl.addToContext(&quot;gvbuffer&quot;, gvBuffer);</span>
+<span class="fc" id="L176">                ognl.addToContext(&quot;input&quot;, outputDataStream.toByteArray());</span>
+<span class="fc" id="L177">                ognl.getValue(toGVBufferExpression, gvBuffer);</span>
+<span class="fc" id="L178">            }</span>
+            else {
+<span class="fc" id="L180">                result = ftpAccess.get(currRemotePath, currRemoteFile, currTargetPath, localOptProperties);</span>
+            }
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">            if (result) {</span>
+<span class="fc" id="L183">                logger.debug(&quot;File(s) &quot; + currRemoteFile + &quot; successfully downloaded from remote directory &quot;</span>
+                        + currRemotePath + &quot; into local directory &quot; + currTargetPath);
+            }
+        }
+        finally {
+<span class="pc" id="L188">            PropertiesHandler.disableExceptionOnErrors();</span>
+<span class="fc" id="L189">        }</span>
+<span class="fc" id="L190">    }</span>
+
+    /**
+     * @see it.greenvulcano.gvesb.virtual.file.remote.command.GVRemoteCommand#isCritical()
+     * 
+     * @return boolean &lt;code&gt;isCritical&lt;/code&gt;
+     */
+    @Override
+    public boolean isCritical()
+    {
+<span class="nc" id="L200">        return isCritical;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
