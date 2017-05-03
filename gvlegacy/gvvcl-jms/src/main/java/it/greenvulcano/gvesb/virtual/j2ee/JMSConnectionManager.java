@@ -311,18 +311,6 @@ public final class JMSConnectionManager implements ConfigurationListener
             XAHelper xaHelper, String connectionFactory) throws NamingException, JMSException
     {
         logger.debug("Creating QueueConnection: connection factory: " + connectionFactory);
-
-        /*
-        QueueConnectionFactory qconFactory = (QueueConnectionFactory) initialContext.lookup(connectionFactory);
-        QueueConnection qconnection = null;
-
-        if (qconFactory instanceof XAQueueConnectionFactory) {
-            qconnection = ((XAQueueConnectionFactory) qconFactory).createXAQueueConnection();
-        }
-        else {
-            qconnection = qconFactory.createQueueConnection();
-        }
-        */
         
         Connection qconnection = ConnectionFactory.class.cast(initialContext.lookup(connectionFactory)).createConnection();
         qconnection.start();

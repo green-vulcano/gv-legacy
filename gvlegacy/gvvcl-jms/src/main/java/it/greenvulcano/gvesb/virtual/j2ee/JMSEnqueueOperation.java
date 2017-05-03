@@ -82,9 +82,6 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
     private boolean             invalidateOnReinsert;
     
     private Session session = null;
-
-  //private Queue               queue       = null;
-  //private Topic               topic       = null;
     
     private JMSConnectionKey    jmsKey      = null;
     private JMSData            jmsData     = null;  
@@ -243,10 +240,7 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
         prepareSession();
         Message message = null;
         
-            try {
-            	
-            	
-            	destinationName = PropertiesHandler.expand(destinationName, gvBuffer);
+            try {           	
             	
                 if (refDP != null && !"".equals(refDP.trim())) {
                     // Enqueue operation uses DataProvider to create message to
@@ -274,9 +268,12 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                                         "Don't know how to create message to send/publish. Data provider is not set and gvBuffer#object is not a JMS message."}});
                     }
                 }
+                
                 if (decorateMessage) {
                 	JMSMessageDecorator.decorateMessage(message, gvBuffer);
                 }
+                String destination = PropertiesHandler.expand(destinationName, gvBuffer);
+                sendOrPublish(message, gvBuffer.getId(), destination);
             }
             catch (InvalidDataException exc) {
                 throw exc;
@@ -290,7 +287,7 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                         exc);
             }
 
-            sendOrPublish(message, gvBuffer.getId());
+           
 
             return gvBuffer;
         
@@ -320,7 +317,7 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
     }
 
 
-    private void sendOrPublish(Message message, Id id) throws J2EEConnectionException, J2EEEnqueueException,
+    private void sendOrPublish(Message message, Id id, String destination) throws J2EEConnectionException, J2EEEnqueueException,
             InvalidDataException, JMSException
     {
         message.setJMSCorrelationID(id.toString());
@@ -340,8 +337,8 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                 throw new J2EEEnqueueException("GVVCL_J2EE_ENQUEUE_ERROR", new String[][]{{"exc", exc.toString()}}, exc);
             }
             if (isQueue) {
-            	logger.debug("Creating queue for destination "+destinationName);
-                Queue lQueue = session.createQueue(destinationName);
+            	logger.debug("Creating queue for destination "+destination);
+                Queue lQueue = session.createQueue(destination);
                 if (session instanceof XAQueueSession) {
                     messageProducer = ((XAQueueSession) session).createProducer(lQueue);
                 }
@@ -355,8 +352,8 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                 }
             }
             else {
-            	logger.debug("Creating topic for destination "+destinationName);
-                Topic lTopic = session.createTopic(destinationName);
+            	logger.debug("Creating topic for destination "+destination);
+                Topic lTopic = session.createTopic(destination);
                 if (session instanceof XATopicSession) {
                     messageProducer = ((XATopicSession) session).createProducer(lTopic);
                 }
