@@ -206,6 +206,7 @@
     <module>gvvcl-rsh</module>
     <module>gvvcl-file</module>
     <module>gvvcl-birt</module>
+    <module>gvdebug</module>
   </modules>
 
 </project>
