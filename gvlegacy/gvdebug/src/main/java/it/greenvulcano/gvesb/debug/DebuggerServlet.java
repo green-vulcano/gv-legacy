@@ -50,8 +50,8 @@ public class DebuggerServlet extends HttpServlet {
     
     private final static Logger LOG = LoggerFactory.getLogger(DebuggerServlet.class);
     private final static Set<String> KEYS = Stream.of(DebugKey.values())
-    		                                      .map(DebugKey::name)
-    		                                      .collect(Collectors.toSet());
+	                                                      .map(DebugKey::name)
+	                                                      .collect(Collectors.toSet());
     
     
     private GVDebugger gvDebugger;
@@ -79,11 +79,11 @@ public class DebuggerServlet extends HttpServlet {
             PrintWriter writer = response.getWriter();
                         
             Map<DebugKey, String> params =  request.getParameterMap()
-            									   .keySet()
-            									   .stream()
-            									   .filter(KEYS::contains)
-            									   .map(DebugKey::valueOf)
-            									   .collect(Collectors.toMap( Function.identity(), k -> request.getParameter(k.name())));
+                                                   .keySet()
+                                                   .stream()
+                                                   .filter(KEYS::contains)
+                                                   .map(DebugKey::valueOf)
+                                                   .collect(Collectors.toMap( Function.identity(), k -> request.getParameter(k.name())));
             
             DebuggerObject dObj = gvDebugger.processCommand(debugOperation, params);
                         
