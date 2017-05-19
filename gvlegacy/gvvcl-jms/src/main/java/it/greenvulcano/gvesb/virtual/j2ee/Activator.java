@@ -19,10 +19,15 @@
  *******************************************************************************/
 package it.greenvulcano.gvesb.virtual.j2ee;
 
+import java.util.Optional;
+
+import javax.management.ObjectName;
+
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.slf4j.LoggerFactory;
 
+import it.greenvulcano.gvesb.core.forward.JMSForwardManager;
 import it.greenvulcano.gvesb.gvdp.DataProviderManager;
 import it.greenvulcano.gvesb.gvdp.impl.JMSBytesMessageDataProvider;
 import it.greenvulcano.gvesb.gvdp.impl.JMSMapMessageDataProvider;
@@ -30,9 +35,12 @@ import it.greenvulcano.gvesb.gvdp.impl.JMSObjectMessageDataProvider;
 import it.greenvulcano.gvesb.gvdp.impl.JMSStreamMessageDataProvider;
 import it.greenvulcano.gvesb.gvdp.impl.JMSTextMessageDataProvider;
 import it.greenvulcano.gvesb.virtual.OperationFactory;
+import it.greenvulcano.jmx.JMXEntryPoint;
 
 public class Activator implements BundleActivator {
 
+	private static Optional<ObjectName> jmxObjectName = Optional.empty();
+	
 	@Override
 	public void start(BundleContext context) throws Exception {
 		
@@ -46,6 +54,13 @@ public class Activator implements BundleActivator {
 		
 		OperationFactory.registerSupplier("jms-enqueue", JMSEnqueueOperation::new);
 		OperationFactory.registerSupplier("jms-dequeue", JMSDequeueOperation::new);
+		
+		try {
+			JMSForwardManager jmsForwardManager = JMSForwardManager.instance();
+			jmxObjectName = Optional.ofNullable(JMXEntryPoint.getInstance().registerObject(jmsForwardManager, JMSForwardManager.DESCRIPTOR_NAME));
+		} catch (Exception e) {
+			LoggerFactory.getLogger(getClass()).error("Fail to setup JMSForwardManager", e);
+		}
 
 	}
 
@@ -59,6 +74,13 @@ public class Activator implements BundleActivator {
 		
 		OperationFactory.unregisterSupplier("jms-enqueue");
 		OperationFactory.unregisterSupplier("jms-dequeue");
+		
+		try {
+			jmxObjectName.ifPresent(JMXEntryPoint.getInstance()::unregisterObject);
+			
+		} catch (Exception e) {
+			LoggerFactory.getLogger(getClass()).error("Fail to remove JMSForwardManager", e);
+		}
 		
 		LoggerFactory.getLogger(getClass()).debug("*********** VCL JMS Stopped ");
 

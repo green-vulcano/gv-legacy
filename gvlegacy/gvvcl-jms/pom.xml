@@ -33,6 +33,13 @@
 			<type>bundle</type>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>it.greenvulcano.gvesb</groupId>
+			<artifactId>gvcore</artifactId>
+			<version>${gvesb.version}</version>
+			<type>bundle</type>
+			<scope>provided</scope>
+		</dependency>
     	<dependency>
 			<groupId>org.apache.geronimo.specs</groupId>
 			<artifactId>geronimo-jms_1.1_spec</artifactId>
@@ -65,6 +72,7 @@
                            	javax.jms,
                         	javax.naming,
                         	javax.rmi,
+                        	javax.management,
                         	javax.transaction,
                         	org.slf4j;version="[1.6,2)";provider=paxlogging,
 							org.w3c.dom;version="[1.0,2)",
@@ -81,7 +89,14 @@
 							it.greenvulcano.gvesb.virtual,
 							it.greenvulcano.util.clazz,
 							it.greenvulcano.util.thread,
-                                                        it.greenvulcano.util.metadata
+                            it.greenvulcano.util.metadata,
+                            it.greenvulcano.event.util.shutdown,
+                            it.greenvulcano.gvesb.core.exc,
+                            it.greenvulcano.jmx,
+                            it.greenvulcano.log,
+                            it.greenvulcano.gvesb.core.pool,
+                            it.greenvulcano.gvesb.log,
+                            it.greenvulcano.gvesb.core
                         </Import-Package>
                     </instructions>
                 </configuration>
