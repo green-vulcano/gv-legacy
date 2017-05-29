@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 
 import javax.mail.FetchProfile;
 import javax.mail.Flags;
@@ -64,9 +66,7 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
 {
 
     private static final Logger logger        = LoggerFactory.getLogger(IMAPCallOperation.class);
-
-    protected String            protocol      = "imap";
-    
+   
     private String              sortField     = null;
     private boolean             sortAscending = false;
     private List<SortTerm>      sortingTerms  = new ArrayList<SortTerm>();
@@ -126,7 +126,9 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
      */
     @Override
     protected String getProtocol() {
-        return protocol;
+        return Optional.ofNullable(serverProps)
+                .orElseGet(Properties::new)
+                .getProperty("mail.store.protocol", "imap");
     }
     
     /**

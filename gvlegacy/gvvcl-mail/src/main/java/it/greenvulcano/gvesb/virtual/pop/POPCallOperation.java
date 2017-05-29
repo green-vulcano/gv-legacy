@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 
 import javax.mail.FetchProfile;
 import javax.mail.Flags;
@@ -60,8 +62,6 @@ public class POPCallOperation extends BaseReceiveMailOperation
 {
 
     private static final Logger logger          = LoggerFactory.getLogger(POPCallOperation.class);
-
-    private String              protocol        = "pop3";
     
     private String              cacheKey        = null;
 
@@ -88,8 +88,10 @@ public class POPCallOperation extends BaseReceiveMailOperation
      * 			the protocol
      */
     @Override
-    protected String getProtocol() {
-        return protocol;
+    protected String getProtocol() {    	   	
+        return  Optional.ofNullable(serverProps)
+                        .orElseGet(Properties::new)
+                        .getProperty("mail.store.protocol", "pop3");
     }
 
     /**
