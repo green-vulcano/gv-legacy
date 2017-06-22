@@ -323,7 +323,7 @@ public class RESTHttpServletMapping implements HttpServletMapping
             logger.error("handleRequest - Service request failed", exc);
             try {
             	 if (exc.getMessage().contains("GV_SERVICE_POLICY_ERROR")) {
-            		 resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            		 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             	 } else {
             		 resp.sendError(500, "" + exc); 
             	 }               

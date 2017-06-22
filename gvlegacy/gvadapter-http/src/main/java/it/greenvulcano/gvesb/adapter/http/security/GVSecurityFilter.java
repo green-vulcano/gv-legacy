@@ -75,7 +75,7 @@ public class GVSecurityFilter implements Filter {
 				chain.doFilter(request, response);
 				
 			} catch (UserExpiredException|CredentialsExpiredException userExpiredException) {	        		
-        		servletResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
+        		servletResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			} catch (PasswordMissmatchException|UserNotFoundException|InvalidCredentialsException unauthorizedException){
 				LOG.warn("Failed to authenticate user", unauthorizedException);
 				servletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
