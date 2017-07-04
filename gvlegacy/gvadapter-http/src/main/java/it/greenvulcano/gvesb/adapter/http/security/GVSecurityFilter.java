@@ -55,11 +55,14 @@ public class GVSecurityFilter implements Filter {
 		if (securityModulesReferences!=null) {				
 			LOG.debug("SecurityManager found, handling authentication");
 			
+			String wwwAuthenticate = "unknown";
 			try {
 				
 				for (ServiceReference<SecurityModule> securityModuleRef :  securityModulesReferences) {
 					
 					SecurityModule securityModule = securityModuleRef.getBundle().getBundleContext().getService(securityModuleRef);
+					wwwAuthenticate = securityModule.getSchema() + " realm="+ securityModule.getRealm();
+					
 					Optional<Identity> identity = securityModule.resolve(authorization);
 					
 					if (identity.isPresent()) {
@@ -75,10 +78,15 @@ public class GVSecurityFilter implements Filter {
 				chain.doFilter(request, response);
 				
 			} catch (UserExpiredException|CredentialsExpiredException userExpiredException) {	        		
-        		servletResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        		servletResponse.setHeader("WWW-Authenticate", wwwAuthenticate);
+        		servletResponse.setHeader("X-Auth-Status", "Expired");
+				servletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				
 			} catch (PasswordMissmatchException|UserNotFoundException|InvalidCredentialsException unauthorizedException){
 				LOG.warn("Failed to authenticate user", unauthorizedException);
-				servletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				servletResponse.setHeader("WWW-Authenticate", wwwAuthenticate);
+        		servletResponse.setHeader("X-Auth-Status", "Denied");
+				servletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);;
         	} catch (Exception e) {
         		LOG.warn("Authentication process failed", e);
         		servletResponse.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
