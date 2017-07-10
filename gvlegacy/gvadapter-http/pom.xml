@@ -109,6 +109,7 @@
                         	org.slf4j;version="[1.6,2)";provider=paxlogging,
                         	org.w3c.dom
                         </Import-Package>
+                        <DynamicImport-Package>it.greenvulcano.*</DynamicImport-Package>
                         <Web-ContextPath>/gvesb</Web-ContextPath>
                     </instructions>
                     <supportedProjectTypes>
