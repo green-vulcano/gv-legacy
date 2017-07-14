@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 public final class ResultSetTransformer {
 
@@ -47,16 +48,18 @@ public final class ResultSetTransformer {
             JSONObject obj = new JSONObject();
             for (String key : names){
             	
+                 Object jsonValue = new JSONTokener(String.valueOf(resultSet.getObject(key))).nextValue();
+            	
             	 if (key.contains(".")){
          	    		String[] hieararchy = key.split("\\.");
          	    		
          	    		JSONObject child = Optional.ofNullable(obj.optJSONObject(hieararchy[0]))
          	    								   .orElse(new JSONObject());
-         	    		child.put(hieararchy[1], Optional.ofNullable(resultSet.getObject(key)).orElse(JSONObject.NULL));
+         	    		child.put(hieararchy[1], Optional.ofNullable(jsonValue).orElse(JSONObject.NULL));
          	    		
          	    		obj.put(hieararchy[0], child);
      	    	} else {
-     	    		obj.put(key, resultSet.getObject(key));
+     	    		obj.put(key, jsonValue);
      	    	}
             }		            
             
@@ -66,6 +69,7 @@ public final class ResultSetTransformer {
 		return queryResult;
 		
 	}
+	
 	
 	
 }
