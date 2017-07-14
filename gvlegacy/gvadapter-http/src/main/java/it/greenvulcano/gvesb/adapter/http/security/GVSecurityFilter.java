@@ -57,12 +57,14 @@ public class GVSecurityFilter implements Filter {
 			
 			String wwwAuthenticate = "unknown";
 			try {
-				
+				Optional<String> xRequestedWith = Optional.ofNullable(servletRequest.getHeader("X-Requested-With"));
 				for (ServiceReference<SecurityModule> securityModuleRef :  securityModulesReferences) {
 					
 					SecurityModule securityModule = securityModuleRef.getBundle().getBundleContext().getService(securityModuleRef);
 					wwwAuthenticate = securityModule.getSchema() + " realm="+ securityModule.getRealm();
-					
+					if (xRequestedWith.isPresent()) {
+						wwwAuthenticate = xRequestedWith.get() + "+" + wwwAuthenticate;
+					}
 					Optional<Identity> identity = securityModule.resolve(authorization);
 					
 					if (identity.isPresent()) {
