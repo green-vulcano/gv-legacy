@@ -19,19 +19,6 @@
  *******************************************************************************/
 package it.greenvulcano.gvesb.datahandling.dbo;
 
-import it.greenvulcano.configuration.XMLConfig;
-import it.greenvulcano.configuration.XMLConfigException;
-import it.greenvulcano.gvesb.datahandling.DBOException;
-import it.greenvulcano.gvesb.datahandling.DHResult;
-import it.greenvulcano.gvesb.datahandling.IDBO;
-import it.greenvulcano.gvesb.datahandling.utils.DiscardCause;
-import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleError;
-import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptionHandler;
-import it.greenvulcano.gvesb.j2ee.db.connections.JDBCConnectionBuilder;
-import it.greenvulcano.util.metadata.PropertiesHandler;
-import it.greenvulcano.util.thread.ThreadUtils;
-import it.greenvulcano.util.txt.DateUtils;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,15 +32,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.namespace.QName;
 import javax.xml.transform.Source;
@@ -71,6 +54,19 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.configuration.XMLConfigException;
+import it.greenvulcano.gvesb.datahandling.DBOException;
+import it.greenvulcano.gvesb.datahandling.DHResult;
+import it.greenvulcano.gvesb.datahandling.IDBO;
+import it.greenvulcano.gvesb.datahandling.utils.DiscardCause;
+import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleError;
+import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptionHandler;
+import it.greenvulcano.gvesb.j2ee.db.connections.JDBCConnectionBuilder;
+import it.greenvulcano.util.metadata.PropertiesHandler;
+import it.greenvulcano.util.thread.ThreadUtils;
+import it.greenvulcano.util.txt.DateUtils;
 
 /**
  * Extends the class {@link DefaultHandler} to parse input RowSet document
@@ -199,7 +195,7 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
 
     private String                currentId               = "0";
     
-    protected Pattern             namedParPattern         = Pattern.compile("(\\:[a-zA-Z][a-zA-Z0-9_]*)");
+    //protected Pattern             namedParPattern         = Pattern.compile("(\\:[a-zA-Z][a-zA-Z0-9_]*)");
 
     // true if this oracle error class is blocking for IDBO
     private boolean               blockPlatformError;
@@ -639,28 +635,9 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
                 }
                 String expandedSQL = PropertiesHandler.expand(statements.get(id), currentProps, currentObject, internalConn);
                 logger.debug("SQL Statement Expanded: " + expandedSQL);
-                Map<String, List<Integer>> sqlStatementParams = new HashMap<String, List<Integer>>();
-                int idx = 1;
-                Matcher m = namedParPattern.matcher(expandedSQL);
-                while (m.find()) {
-                    String par = m.group().substring(1);
-                    List<Integer> pos = sqlStatementParams.get(par);
-                    if (pos == null) {
-                        pos = new ArrayList<Integer>();
-                        sqlStatementParams.put(par, pos);
-                    }
-                    pos.add(idx);
-                    idx++;
-                }
-                int sqlStatementParamCount = --idx;
-                m.reset();
-                expandedSQL = m.replaceAll("?");
-                if (sqlStatementParamCount > 0) {
-                    logger.debug("SQL Statement Named Params: " + sqlStatementParams);
-                    sqlStatementsParams.addAll(sqlStatementParams.keySet());
-                }
+               
                 Statement statement = internalConn.prepareStatement(expandedSQL);
-                sqlStatementInfo = new StatementInfo(id, expandedSQL, statement, sqlStatementParams, sqlStatementParamCount);
+                sqlStatementInfo = new StatementInfo(id, expandedSQL, statement);
                 setCurrentId(id);
             }
             catch (SQLException exc) {
