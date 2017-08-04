@@ -221,46 +221,7 @@ public class DataHandlerTestCase extends TestCase {
 		assertEquals(0, result.getRead());
 		assertEquals("", result.getDiscardCauseListAsString());
 
-		operation = "GVESB::TestInsertMultiNP";
-		dboBuilder = dhFactory.getDBOBuilder(operation);
-		result = dboBuilder.EXECUTE(operation, Commons.createInsertMultiNPMessage(), null);
-		assertEquals(0, result.getDiscard());
-		assertEquals(0, result.getUpdate());
-		assertEquals(2, result.getTotal());
-		assertEquals(2, result.getInsert());
-		assertEquals(0, result.getRead());
-		assertEquals("", result.getDiscardCauseListAsString());
-
-		operation = "GVESB::TestUpdateMultiNP";
-		dboBuilder = dhFactory.getDBOBuilder(operation);
-		result = dboBuilder.EXECUTE(operation, Commons.createUpdateMultiNPMessage(), null);
-		assertEquals(0, result.getDiscard());
-		assertEquals(2, result.getUpdate());
-		assertEquals(2, result.getTotal());
-		assertEquals(0, result.getInsert());
-		assertEquals(0, result.getRead());
-		assertEquals("", result.getDiscardCauseListAsString());
-
-		operation = "GVESB::TestInsertMultiMixNP";
-		dboBuilder = dhFactory.getDBOBuilder(operation);
-		result = dboBuilder.EXECUTE(operation, Commons.createInsertMultiMixNPMessage(), null);
-		assertEquals(0, result.getDiscard());
-		assertEquals(0, result.getUpdate());
-		assertEquals(4, result.getTotal());
-		assertEquals(4, result.getInsert());
-		assertEquals(0, result.getRead());
-		assertEquals("", result.getDiscardCauseListAsString());
-
-		operation = "GVESB::TestUpdateMultiMixNP";
-		dboBuilder = dhFactory.getDBOBuilder(operation);
-		result = dboBuilder.EXECUTE(operation, Commons.createUpdateMultiMixNPMessage(), null);
-		assertEquals(0, result.getDiscard());
-		assertEquals(4, result.getUpdate());
-		assertEquals(4, result.getTotal());
-		assertEquals(0, result.getInsert());
-		assertEquals(0, result.getRead());
-		assertEquals("", result.getDiscardCauseListAsString());
-
+	
 		operation = "GVESB::TestInsertOrUpdateMulti";
 		dboBuilder = dhFactory.getDBOBuilder(operation);
 		result = dboBuilder.EXECUTE(operation, Commons.createInsertOrUpdateMultiMessage(), null);
