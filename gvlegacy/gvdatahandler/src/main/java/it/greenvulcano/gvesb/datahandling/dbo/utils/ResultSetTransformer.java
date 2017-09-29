@@ -27,8 +27,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.slf4j.LoggerFactory;
 
 public final class ResultSetTransformer {
 
@@ -47,8 +48,8 @@ public final class ResultSetTransformer {
          	           
             JSONObject obj = new JSONObject();
             for (String key : names){
-            	
-                 Object jsonValue = new JSONTokener(String.valueOf(resultSet.getObject(key))).nextValue();
+            	           	
+                 Object jsonValue = parseValue(resultSet.getObject(key));
             	
             	 if (key.contains(".")){
          	    		String[] hieararchy = key.split("\\.");
@@ -67,6 +68,29 @@ public final class ResultSetTransformer {
         }
 		
 		return queryResult;
+		
+	}
+	
+	private static Object parseValue(Object object) {
+		
+		if (object instanceof String) {
+			
+			String value = (String) object;
+			
+			try {
+				if (value.startsWith("{")  && value.endsWith("}")) {
+					return new JSONObject(value);
+					
+				} else if (value.startsWith("[") && value.endsWith("]"))  {
+					return new JSONArray(value);
+				}
+			} catch (JSONException e) {
+				LoggerFactory.getLogger(ResultSetTransformer.class).warn("Something goes wrong parsing "+value+" as JSON");
+			}
+			
+		}	
+		
+		return object;
 		
 	}
 	
