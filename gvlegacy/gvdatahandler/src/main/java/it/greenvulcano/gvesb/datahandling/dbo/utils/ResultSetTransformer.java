@@ -20,19 +20,26 @@
 
 package it.greenvulcano.gvesb.datahandling.dbo.utils;
 
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class ResultSetTransformer {
 
+	private final static Logger LOG = LoggerFactory.getLogger(ResultSetTransformer.class);
+	
 	
 	public static JSONArray toJSONArray(ResultSet resultSet) throws SQLException {
 		
@@ -60,7 +67,7 @@ public final class ResultSetTransformer {
          	    		
          	    		obj.put(hieararchy[0], child);
      	    	} else {
-     	    		obj.put(key, jsonValue);
+     	    		obj.put(key,  Optional.ofNullable(jsonValue).orElse(JSONObject.NULL));
      	    	}
             }		            
             
@@ -72,10 +79,33 @@ public final class ResultSetTransformer {
 	}
 	
 	private static Object parseValue(Object object) {
+		try {
+			if (object instanceof Blob) {
+				
+				byte[] blob = IOUtils.toByteArray(Blob.class.cast(object).getBinaryStream());
+				object = Base64.getEncoder().encodeToString(blob);
+			}
+		} catch (Exception e) {
+			LOG.error("Something goes wrong parsing BLOB field",e);
+			object = "Unparsable BLOB";
+		}
+		
+		try {
+			
+			if (object instanceof Clob) {
+				
+				byte[] clob = IOUtils.toByteArray(Clob.class.cast(object).getAsciiStream());
+				object = new String(clob, "UTF-8");
+			}
+			
+		} catch (Exception e) {
+			LOG.error("Something goes wrong parsing CLOB field",e);
+			object = "Unparsable CLOB";
+		}
 		
 		if (object instanceof String) {
 			
-			String value = (String) object;
+			String value = String.class.cast(object).trim();
 			
 			try {
 				if (value.startsWith("{")  && value.endsWith("}")) {
@@ -85,7 +115,7 @@ public final class ResultSetTransformer {
 					return new JSONArray(value);
 				}
 			} catch (JSONException e) {
-				LoggerFactory.getLogger(ResultSetTransformer.class).warn("Something goes wrong parsing "+value+" as JSON");
+				LOG.warn("Something goes wrong parsing "+value+" as JSON");
 			}
 			
 		}	
