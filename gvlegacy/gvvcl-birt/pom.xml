@@ -18,7 +18,7 @@
 	<parent>
         <artifactId>gvlegacy</artifactId>
         <groupId>it.greenvulcano.gvesb</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.alpha1</version>
     </parent>
 
 	<groupId>it.greenvulcano.gvesb.adapter</groupId>
@@ -30,19 +30,11 @@
         gvbirt OSGi bundle project.
     </description>
 
-	<properties>
-		<maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
-		<osgi.version>6.0.0</osgi.version>
-		<gvesb.version>4.0.0-SNAPSHOT</gvesb.version>
-		<legacy.version>4.0.0-SNAPSHOT</legacy.version>
-		<maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
-			<version>${osgi.version}</version>
+			<version>${version.osgi}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -69,7 +61,7 @@
 		<dependency>
 			<groupId>it.greenvulcano.gvesb.adapter</groupId>
 			<artifactId>gvdatahandler</artifactId>
-			<version>${legacy.version}</version>
+			<version>${gvesb.version}</version>
 			<type>bundle</type>
 			<scope>provided</scope>
 		</dependency>

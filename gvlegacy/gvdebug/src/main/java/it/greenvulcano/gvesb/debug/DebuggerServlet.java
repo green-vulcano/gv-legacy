@@ -135,7 +135,7 @@ public class DebuggerServlet extends HttpServlet {
         log.append("---- Headers END\n");
         
         log.append("---- Body START\n");
-        log.append(IOUtils.toString(request.getInputStream())).append("\n");
+        log.append(IOUtils.toString(request.getInputStream(),"UTF-8")).append("\n");
         log.append("---- Body END\n");
        
         log.append("-- DUMP HttpServletRequest END \n");

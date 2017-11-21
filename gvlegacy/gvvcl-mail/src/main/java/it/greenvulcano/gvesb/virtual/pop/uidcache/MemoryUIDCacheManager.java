@@ -85,7 +85,6 @@ public class MemoryUIDCacheManager implements UIDCacheManager
      * 			the Set<String> UIDCache value
      * @throws Exception
      */
-    @SuppressWarnings("unchecked")
     private Set<String> getUIDCacheInt(String key) throws Exception
     {
         Set<String> uidCache = popCacheMap.get(key);

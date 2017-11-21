@@ -80,7 +80,8 @@ public class UIDCacheRemoveOperation implements CallOperation
             logger.debug("Initial Context properties: " + initialContext);
 
             // only to check the configuration
-            Session session = (Session) initialContext.lookup(jndiName);
+            @SuppressWarnings("unused")
+			Session session = (Session) initialContext.lookup(jndiName);
         }
         catch (Exception exc) {
             logger.error("Error initializing UIDCacheRemove call operation", exc);

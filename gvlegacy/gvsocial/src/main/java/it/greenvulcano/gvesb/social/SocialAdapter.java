@@ -84,6 +84,7 @@ public abstract class SocialAdapter {
 	 * @return
 	 * @throws SocialAdapterException 
 	 */
+	@SuppressWarnings("rawtypes")
 	protected GVBuffer execute(GVBuffer buffer) throws SocialAdapterException {
 		GVBuffer output = null;
 		XMLUtils parser = null;

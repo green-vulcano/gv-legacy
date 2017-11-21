@@ -18,7 +18,7 @@
 	<parent>
 		<groupId>it.greenvulcano.gvesb</groupId>
         <artifactId>gvlegacy</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.alpha1</version>
     </parent>
 
 	<groupId>it.greenvulcano.gvesb.adapter</groupId>
@@ -26,16 +26,6 @@
 	<packaging>bundle</packaging>
 
 	<name>GreenVulcano VCL RSH Plugin</name>
-	<description>
-        gvrsh OSGi bundle project.
-    </description>
-
-	<properties>
-		<maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
-		<osgi.version>6.0.0</osgi.version>
-		<version.pax-logging>1.9.1</version.pax-logging>
-		<gvesb.version>4.0.0-SNAPSHOT</gvesb.version>
-	</properties>
 
 	<dependencies>
 
@@ -95,7 +85,7 @@
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
-			<version>${osgi.version}</version>
+			<version>${version.osgi}</version>
 			<scope>provided</scope>
 		</dependency>
 		
