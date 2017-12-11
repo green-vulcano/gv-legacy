@@ -25,7 +25,7 @@
     <parent>
         <artifactId>gvlegacy</artifactId>
         <groupId>it.greenvulcano.gvesb</groupId>
-        <version>4.0.alpha1</version>
+        <version>4.0.alpha2</version>
     </parent>
 
     <groupId>it.greenvulcano.gvesb.adapter</groupId>
