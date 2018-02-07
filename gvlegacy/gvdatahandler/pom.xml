@@ -7,7 +7,7 @@
     <parent>
         <artifactId>gvlegacy</artifactId>
         <groupId>it.greenvulcano.gvesb</groupId>
-        <version>4.0.alpha2</version>
+        <version>4.0.0-SNAPSHOT</version>
     </parent>
 
 	<groupId>it.greenvulcano.gvesb.adapter</groupId>
@@ -132,7 +132,10 @@
 					<instructions>
 						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
 						<Bundle-Version>${project.version}</Bundle-Version>
-						<Export-Package>it.greenvulcano.gvesb.adapter.gvdatahandler*;version=${project.version}</Export-Package>
+						<Export-Package>
+								it.greenvulcano.gvesb.datahandling.utils;version=${project.version},
+								it.greenvulcano.gvesb.datahandling.utils.*;version=${project.version},
+						</Export-Package>
 						<Import-Package>
 							it.greenvulcano.*,
 							org.slf4j;version="[1.6,2)";provider=paxlogging,

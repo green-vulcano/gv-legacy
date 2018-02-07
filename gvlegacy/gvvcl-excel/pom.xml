@@ -29,10 +29,10 @@
     </parent>
 
     <groupId>it.greenvulcano.gvesb.adapter</groupId>
-    <artifactId>gvvcl-file</artifactId>
+    <artifactId>gvvcl-excel</artifactId>
     <packaging>bundle</packaging>
 
-    <name>GreenVulcano VCL File Plugin</name>
+    <name>GreenVulcano VCL Excel Plugin</name>
     <description>
         gvvcl-file OSGi bundle project.
     </description>
@@ -72,50 +72,38 @@
 			<version>${log4j2.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-    		<groupId>org.apache.ws.commons.axiom</groupId>
-    		<artifactId>axiom-impl</artifactId>
-    		<version>${axiom.version}</version>
-    		<type>bundle</type>
-		</dependency>
-
-		<!-- *************** TEST *************** -->
-		 <dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.5</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-   			<groupId>commons-net</groupId>
-   			<artifactId>commons-net</artifactId>
-   			<version>3.1</version>
-   			<scope>test</scope>
-		</dependency>
-		<dependency>
-    		<groupId>xml-resolver</groupId>
-    		<artifactId>xml-resolver</artifactId>
-    		<version>1.2</version>
-    		<scope>test</scope>
-		</dependency>
-		<dependency>
-    		<groupId>org.mockftpserver</groupId>
-    		<artifactId>MockFtpServer</artifactId>
-    		<version>2.0.2</version>
-    		<scope>test</scope>
-		</dependency>
-		<dependency>
-    		<groupId>org.springframework</groupId>
-   			<artifactId>spring-context</artifactId>
-   			<version>4.3.7.RELEASE</version>
-   			<scope>test</scope>
-		</dependency>
-		<dependency>
-    		<groupId>commons-beanutils</groupId>
-    		<artifactId>commons-beanutils</artifactId>
-    		<version>1.0</version>
-    		<scope>test</scope>
-		</dependency>
+	
+        <dependency>
+            <groupId>net.sourceforge.jexcelapi</groupId>
+            <artifactId>jxl</artifactId>
+            <version>2.6.12</version> 
+            <scope>compile</scope>           
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>3.9</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>3.9</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml-schemas</artifactId>
+            <version>3.9</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlbeans</groupId>
+            <artifactId>xmlbeans</artifactId>
+            <version>2.6.0</version>
+            <scope>compile</scope>
+        </dependency>
+		
 	 </dependencies>
 
     <build>
@@ -130,11 +118,27 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Bundle-Activator>it.greenvulcano.gvesb.virtual.file.Activator</Bundle-Activator>
-                        <Export-Package/>
-                          
+                        <Export-Package>
+                            it.greenvulcano.gvesb.virtual.file*;version=${project.version}
+                        </Export-Package>
                         <Import-Package>
-                            *
+                            it.greenvulcano.configuration;version="[4.0,5)",
+                            it.greenvulcano.gvesb.buffer;version="[4.0,5)",
+                            it.greenvulcano.gvesb.internal.data;version="[4.0,5)",
+                            it.greenvulcano.gvesb.j2ee.db.connections;version="[4.0,5)",
+                            it.greenvulcano.gvesb.virtual;version="[4.0,5)",                            
+                            it.greenvulcano.log;version="[4.0,5)",
+                            it.greenvulcano.util.metadata;version="[4.0,5)",
+                            it.greenvulcano.util.thread;version="[4.0,5)",
+                            it.greenvulcano.util.txt;version="[4.0,5)",
+                            it.greenvulcano.util.xml;version="[4.0,5)",
+                            org.osgi.framework;version="[1.8,2)",
+                            org.slf4j;version="[1.7,2)",
+                            org.w3c.dom                            
                         </Import-Package>
+                        <Embed-Dependency>*;scope=compile;type=jar;artifactId=!xml-apis</Embed-Dependency>
+						<Embed-Transitive>true</Embed-Transitive>
+						<Bundle-Activator>it.greenvulcano.gvesb.virtual.excel.Activator</Bundle-Activator>
                     </instructions>
                 </configuration>
             </plugin>

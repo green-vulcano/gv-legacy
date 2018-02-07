@@ -4,7 +4,7 @@
 
   <groupId>it.greenvulcano.gvesb</groupId>
   <artifactId>gvlegacy</artifactId>
-  <version>4.0.alpha2</version>
+  <version>4.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>GreenVulcano ESB Legacy components</name>
@@ -16,7 +16,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<gvesb.version>4.0.alpha2</gvesb.version>
+	<gvesb.version>4.0.0-SNAPSHOT</gvesb.version>
     <maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
     <jacoco-maven-plugin.version>0.7.7.201606060606</jacoco-maven-plugin.version>
     <maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
@@ -202,6 +202,7 @@
     <module>gvvcl-jms</module>
     <module>gvvcl-ws</module>
     <module>gvvcl-mail</module>
+    <module>gvvcl-excel</module>
     <module>gvsocial</module>
     <module>gvvcl-rsh</module>
     <module>gvvcl-file</module>
