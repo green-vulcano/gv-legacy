@@ -23,10 +23,12 @@ package it.greenvulcano.gvesb.virtual.smtp;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.IntStream;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
@@ -115,6 +117,13 @@ public class SMTPCallOperation implements CallOperation
      * The content type.
      */
     private String              contentType                = null;
+    
+    /**
+     * The content tranfer encoding @see(https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html).
+     */
+    private String              contentTransferEncoding    = null;
+    
+    private final Map<String, String> headers = new LinkedHashMap<>();
 
     /**
      * The mail subject.
@@ -303,6 +312,25 @@ public class SMTPCallOperation implements CallOperation
         logger.debug("Subject: " + subjectText);
         contentType = XMLConfig.get(node, "@content-type").replace('-', '/');
         logger.debug("Content type: " + contentType);
+        
+        contentTransferEncoding = XMLConfig.get(node, "@content-transfer-encoding", "quoted-printable");
+        logger.debug("Content transfer encoding: " + contentTransferEncoding);
+        
+        if (XMLConfig.exists(node, "./headers")) {
+        	NodeList msgHeaders = XMLConfig.getNodeList(node, "./headers/header");
+        	
+        	IntStream.range(0, msgHeaders.getLength())
+        	         .mapToObj(msgHeaders::item)
+        	         .forEach(header->{
+     		    		try {
+     		    			headers.put(XMLConfig.get(header, "@name"), XMLConfig.get(header, "@value"));
+     		    		} catch (Exception e) {
+     		    			logger.error("Fail to read configuration", e);
+     		    		}
+     		    	});
+        	
+        }
+        
 
         Node destinations = XMLConfig.getNode(node, "destinations");
         if (destinations != null) {
@@ -535,10 +563,16 @@ public class SMTPCallOperation implements CallOperation
                 }
                 messageBodyPart.setContent(message, contentType);
                 messageBodyPart.setContentLanguage(new String[]{Locale.getDefault().getLanguage()});
-        
+                
+                messageBodyPart.addHeader("Content-Transfer-Encoding", contentTransferEncoding);
+                
+                for (String header : headers.keySet()) {
+                	messageBodyPart.addHeader(header, headers.get(header));
+                }                
+                
                 Multipart multipart = new MimeMultipart();
                 multipart.addBodyPart(messageBodyPart);
-        
+                        
                 String appoBufferName = gvBuffer.getProperty("GV_SMTP_BUFFER_NAME");
                 if ((appoBufferName == null) || "".equals(appoBufferName)) {
                     appoBufferName = gvBufferName;
