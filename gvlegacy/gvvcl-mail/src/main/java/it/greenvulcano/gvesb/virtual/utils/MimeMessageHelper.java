@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
+
+import javax.activation.DataHandler;
 import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -35,6 +37,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
+
 import org.apache.commons.codec.binary.Base64;
 
 public class MimeMessageHelper {
@@ -58,7 +62,9 @@ public class MimeMessageHelper {
 		MimeMessage email = new MimeMessage(session);
 
 		email.setFrom(new InternetAddress(from));
-		email.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+		for (String recipient : to.split(";")) {
+			email.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+		}
 
 		return new MimeMessageHelper(email);
 	}
@@ -104,12 +110,27 @@ public class MimeMessageHelper {
 	public MimeMessageHelper addAttachment(String name, String type, String content) throws MessagingException {
 		
 		BodyPart attachmentPart = new MimeBodyPart();
+		ByteArrayDataSource byteArrayDataSource = new ByteArrayDataSource(Base64.decodeBase64(content), type);
+		
+		attachmentPart.setDataHandler(new DataHandler(byteArrayDataSource));
 		attachmentPart.setFileName(name);
-		attachmentPart.setContent(content, type);
-		attachmentPart.setDisposition(Part.ATTACHMENT);
-		attachmentPart.setHeader("Content-Transfer-Encoding", "base64");
+		
+		attachmentPart.setDisposition(Part.ATTACHMENT);		
 		attachments.add(attachmentPart);
-		return this;		
+		return this;	
+	}
+	
+   public MimeMessageHelper addAttachment(String name, String type, byte[] content) throws MessagingException {
+		
+		BodyPart attachmentPart = new MimeBodyPart();
+		ByteArrayDataSource byteArrayDataSource = new ByteArrayDataSource(content, type);
+		
+		attachmentPart.setDataHandler(new DataHandler(byteArrayDataSource));
+		attachmentPart.setFileName(name);
+		
+		attachmentPart.setDisposition(Part.ATTACHMENT);		
+		attachments.add(attachmentPart);
+		return this;	
 	}
 
 	public MimeMessage getMimeMessage() throws MessagingException {
@@ -117,11 +138,12 @@ public class MimeMessageHelper {
 		if (attachments.isEmpty()) {
 			switch (messageType) {
 			case HTML:
-				mimeMessage.setContent(messageBody, "text/html; charset=utf-8");	
+				mimeMessage.setContent(messageBody, "text/html; charset=utf-8");				
 				break;
 
 			case TEXT:
 				mimeMessage.setText(messageBody, "UTF-8");
+				mimeMessage.addHeader("Content-Transfer-Encoding",	"quoted-printable");
 				break;
 			}
 		} else {
@@ -135,6 +157,7 @@ public class MimeMessageHelper {
 
 			case TEXT:
 				mimeBodyPart.setText(messageBody, "UTF-8");
+				mimeMessage.addHeader("Content-Transfer-Encoding",	"quoted-printable");
 				break;
 			}
 			
