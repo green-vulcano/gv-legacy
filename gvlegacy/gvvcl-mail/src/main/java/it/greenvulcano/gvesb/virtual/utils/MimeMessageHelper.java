@@ -108,19 +108,10 @@ public class MimeMessageHelper {
 	}
 
 	public MimeMessageHelper addAttachment(String name, String type, String content) throws MessagingException {
-		
-		BodyPart attachmentPart = new MimeBodyPart();
-		ByteArrayDataSource byteArrayDataSource = new ByteArrayDataSource(Base64.decodeBase64(content), type);
-		
-		attachmentPart.setDataHandler(new DataHandler(byteArrayDataSource));
-		attachmentPart.setFileName(name);
-		
-		attachmentPart.setDisposition(Part.ATTACHMENT);		
-		attachments.add(attachmentPart);
-		return this;	
+		return addAttachment(name, type, Base64.decodeBase64(content));	
 	}
 	
-   public MimeMessageHelper addAttachment(String name, String type, byte[] content) throws MessagingException {
+    public MimeMessageHelper addAttachment(String name, String type, byte[] content) throws MessagingException {
 		
 		BodyPart attachmentPart = new MimeBodyPart();
 		ByteArrayDataSource byteArrayDataSource = new ByteArrayDataSource(content, type);
