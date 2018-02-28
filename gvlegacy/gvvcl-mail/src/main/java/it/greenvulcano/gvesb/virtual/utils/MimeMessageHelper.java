@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
-
 import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -70,17 +69,23 @@ public class MimeMessageHelper {
 	}
 
 	public MimeMessageHelper addTo(String to) throws AddressException, MessagingException {
-		mimeMessage.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+		for (String recipient : to.split(";")) {
+			mimeMessage.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+		}		
 		return this;
 	}
 
 	public MimeMessageHelper addCC(String cc) throws AddressException, MessagingException {
-		mimeMessage.addRecipient(Message.RecipientType.CC, new InternetAddress(cc));
+		for (String recipient : cc.split(";")) {
+			mimeMessage.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+		}
 		return this;
 	}
 
 	public MimeMessageHelper addBCC(String bcc) throws AddressException, MessagingException {
-		mimeMessage.addRecipient(Message.RecipientType.BCC, new InternetAddress(bcc));
+		for (String recipient : bcc.split(";")) {
+			mimeMessage.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+		}
 		return this;
 	}
 
