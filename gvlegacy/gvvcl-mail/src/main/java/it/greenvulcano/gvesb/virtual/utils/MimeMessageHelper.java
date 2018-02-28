@@ -83,14 +83,14 @@ public class MimeMessageHelper {
 
 	public MimeMessageHelper addCC(String cc) throws AddressException, MessagingException {
 		for (String recipient : cc.split(";")) {
-			mimeMessage.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+			mimeMessage.addRecipient(Message.RecipientType.CC, new InternetAddress(recipient));
 		}
 		return this;
 	}
 
 	public MimeMessageHelper addBCC(String bcc) throws AddressException, MessagingException {
 		for (String recipient : bcc.split(";")) {
-			mimeMessage.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+			mimeMessage.addRecipient(Message.RecipientType.BCC, new InternetAddress(recipient));
 		}
 		return this;
 	}
