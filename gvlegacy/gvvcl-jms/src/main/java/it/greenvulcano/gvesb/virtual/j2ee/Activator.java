@@ -66,6 +66,7 @@ public class Activator implements BundleActivator {
 
 	@Override
 	public void stop(BundleContext context) throws Exception {
+		
 		DataProviderManager.unregisterSupplier("JMSBytesMessageDataProvider");
 		DataProviderManager.unregisterSupplier("JMSMapMessageDataProvider");
 		DataProviderManager.unregisterSupplier("JMSObjectMessageDataProvider");
@@ -79,8 +80,16 @@ public class Activator implements BundleActivator {
 			jmxObjectName.ifPresent(JMXEntryPoint.getInstance()::unregisterObject);
 			
 		} catch (Exception e) {
-			LoggerFactory.getLogger(getClass()).error("Fail to remove JMSForwardManager", e);
+			LoggerFactory.getLogger(getClass()).error("Fail to remove JMSForwardManager object name", e);
 		}
+		
+		try {
+			JMSForwardManager.instance().destroy();
+			
+		} catch (Exception e) {
+			LoggerFactory.getLogger(getClass()).error("Fail to destroy JMSForwardManager", e);
+		}
+		
 		
 		LoggerFactory.getLogger(getClass()).debug("*********** VCL JMS Stopped ");
 

@@ -186,7 +186,7 @@ public class JMSData implements ExceptionListener
     {
         String sKey = "" + transacted + acknowledge;
         logger.debug("Requested TopicSession key: " + sKey + " on JMSData " + this);
-        Session tSession = topicSessions.get(key);
+        Session tSession = topicSessions.get(sKey);
         if (tSession == null) {
             if ((transacted && (acknowledge == 0)) && (connection instanceof XATopicConnection)) {
                 tSession = ((XATopicConnection) connection).createXATopicSession();
