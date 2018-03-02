@@ -25,6 +25,10 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.greenvulcano.configuration.ConfigurationEvent;
+import it.greenvulcano.configuration.ConfigurationListener;
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.core.config.GreenVulcanoConfig;
 import it.greenvulcano.gvesb.virtual.OperationFactory;
 import it.greenvulcano.gvesb.virtual.file.reader.AnalyzeDirCall;
 import it.greenvulcano.gvesb.virtual.file.reader.FileReader;
@@ -39,6 +43,19 @@ import it.greenvulcano.gvesb.virtual.file.writer.FileWriter;
 public class Activator implements BundleActivator {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
+	
+	private final static ConfigurationListener configurationListener = event-> {
+		
+		LOG.debug("GV ESB Kafka plugin module - handling configuration event");
+		
+		if ((event.getCode() == ConfigurationEvent.EVT_FILE_REMOVED) && event.getFile().equals(GreenVulcanoConfig.getSystemsConfigFileName())) {
+			DirectoryWatcherManager.shutDown();
+		}
+		
+		if ((event.getCode() == ConfigurationEvent.EVT_FILE_LOADED) && event.getFile().equals(GreenVulcanoConfig.getSystemsConfigFileName())) {
+			DirectoryWatcherManager.setUp();
+		}
+	};
 
 	/**
 	 * 
@@ -56,7 +73,10 @@ public class Activator implements BundleActivator {
     	OperationFactory.registerSupplier("filewriter-call", FileWriter::new);
     	OperationFactory.registerSupplier("fsmonitor-call", AnalyzeDirCall::new);
     	
+    	DirectoryWatcherManager.setUp();
+    	
     	LOG.debug("*********** GV VCL File Up&Runnig");
+    	XMLConfig.addConfigurationListener(configurationListener, GreenVulcanoConfig.getSystemsConfigFileName());
     }
 
     /**
@@ -68,6 +88,7 @@ public class Activator implements BundleActivator {
      */
     
     public void stop(BundleContext context) throws Exception {
+    	XMLConfig.removeConfigurationListener(configurationListener);
     	
     	OperationFactory.unregisterSupplier("filemanager-call");
     	OperationFactory.unregisterSupplier("remotemanager-call");
@@ -75,6 +96,7 @@ public class Activator implements BundleActivator {
     	OperationFactory.unregisterSupplier("filewriter-call");
     	OperationFactory.unregisterSupplier("fsmonitor-call");
     	
+    	DirectoryWatcherManager.shutDown();
     	LOG.debug("*********** GV VCL File Stopped");
     }
 

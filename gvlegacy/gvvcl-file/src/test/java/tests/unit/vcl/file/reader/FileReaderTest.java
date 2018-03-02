@@ -82,6 +82,7 @@ public class FileReaderTest extends TestCase {
      *         if any error occurs
      */
 	
+	@SuppressWarnings("deprecation")
 	public void testReadFile() throws Exception
 	{		
 		String content = "12345678";
@@ -113,6 +114,7 @@ public class FileReaderTest extends TestCase {
      *         if any error occurs
      */
 	
+	@SuppressWarnings("deprecation")
 	public void testReadFileXML() throws Exception
 	{		
 		String content = "<tag>ciao</tag>";

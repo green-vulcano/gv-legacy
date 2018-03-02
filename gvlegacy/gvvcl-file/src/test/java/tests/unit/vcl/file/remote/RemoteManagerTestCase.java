@@ -62,7 +62,8 @@ public class RemoteManagerTestCase extends TestCase
         FileUtils.deleteQuietly(new File(TEST_FILE_DEST_RESOURCES));
         FileUtils.forceMkdir(new File(TEST_FILE_DEST_RESOURCES));
 
-        ApplicationContext context = new ClassPathXmlApplicationContext("fakeFTP.xml");
+        @SuppressWarnings("resource")
+		ApplicationContext context = new ClassPathXmlApplicationContext("fakeFTP.xml");
         fakeFtpServer = (FakeFtpServer) context.getBean("FakeFtpServer");
         fakeFtpServer.start();        
     }
