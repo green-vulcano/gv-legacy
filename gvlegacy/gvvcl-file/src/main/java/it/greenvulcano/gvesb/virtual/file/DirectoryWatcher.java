@@ -25,7 +25,7 @@ import it.greenvulcano.gvesb.core.pool.GreenVulcanoPool;
 import it.greenvulcano.gvesb.core.pool.GreenVulcanoPoolException;
 import it.greenvulcano.gvesb.core.pool.GreenVulcanoPoolManager;
 
-public class DirectoryWatcher  {
+public class DirectoryWatcher implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(DirectoryWatcher.class);
 	private static final ExecutorService EXECUTOR_SERVICE = Executors.newWorkStealingPool();
 
@@ -79,18 +79,33 @@ public class DirectoryWatcher  {
 	}
 	
 	void start(){
-		LOG.debug("DirectoryWatcher -"+name+" starting on "+directory);
+		
 		if(running.compareAndSet(false, true)) {
-			processEvents();
+			Thread eventLoop = new Thread(this);
+			eventLoop.start();			
+			
 		}
+		
+		LOG.debug("DirectoryWatcher -"+name+" starting on "+directory);
 		
 	}
 	
 	void stop() {
 		LOG.debug("DirectoryWatcher -"+name+" stopping on "+directory);
-		if(running.compareAndSet(true, false)) {
-			watchKey.cancel();
+		if(watchKey.isValid()) {
+			
+			watchKey.cancel();	
+			
 		}
+		
+		try {
+			watcher.close();			
+		} catch (IOException e) {
+			LOG.error("DirectoryWatcher -"+name+" interruped on "+directory, e);
+		} finally {
+			running.compareAndSet(true, false);
+		}		
+		
 	}
 
 	private void processEvents() {
@@ -224,6 +239,12 @@ public class DirectoryWatcher  {
 		} else if (!service.equals(other.service))
 			return false;
 		return true;
+	}
+
+	@Override
+	public void run() {
+		processEvents();
+		
 	}
 
 	

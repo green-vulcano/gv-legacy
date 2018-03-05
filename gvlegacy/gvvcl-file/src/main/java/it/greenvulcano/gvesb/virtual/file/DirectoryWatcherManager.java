@@ -61,6 +61,7 @@ public final class DirectoryWatcherManager {
 	static void shutDown() {
 		LOG.debug("Finalizing FileAdapter");
 		directoryWatchers.stream().forEach(DirectoryWatcher::stop);
+		directoryWatchers.clear();
 	}
 	
 	private static void configure(Node directoryWatcherNode) {
