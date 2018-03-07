@@ -26,7 +26,7 @@ import it.greenvulcano.gvesb.core.pool.GreenVulcanoPoolManager;
 
 public class DirectoryWatcher  {
 	private static final Logger LOG = LoggerFactory.getLogger(DirectoryWatcher.class);
-	private static final ExecutorService EXECUTOR_SERVICE = Executors.newWorkStealingPool();
+	private static final ExecutorService executorService = Executors.newWorkStealingPool();
 
 	private final String name;
 	private final Path directory;
@@ -87,7 +87,7 @@ public class DirectoryWatcher  {
 		        	        .filter(Optional::isPresent)
 		        	        .map(Optional::get)		        	        
 		        	        .map(GreenVulcanoExecutor::new)
-		        	        .forEach(EXECUTOR_SERVICE::submit);
+		        	        .forEach(executorService::submit);
 		        	
 		        	eventKey.reset();
 		        	
@@ -106,7 +106,7 @@ public class DirectoryWatcher  {
 		try {
 			watcher.close();
 			
-			EXECUTOR_SERVICE.shutdown();
+			executorService.shutdown();
 		} catch (IOException e) {
 			LOG.error("DirectoryWatcher["+name+"] interruped on "+directory, e);
 		} 	

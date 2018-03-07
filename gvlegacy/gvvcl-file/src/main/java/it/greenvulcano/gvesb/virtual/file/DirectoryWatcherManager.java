@@ -10,8 +10,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -31,9 +32,12 @@ public final class DirectoryWatcherManager implements Runnable {
 	private final static Set<DirectoryWatcher> directoryWatchers = new LinkedHashSet<>();	
 	private final static Map<String, Kind<Path>> eventKinds = new  LinkedHashMap<>();
 	
-	private static final AtomicBoolean running;
+	private static final AtomicBoolean running;	
+	private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+	private static final long POLLING_RATE = 120; 
 	
-	private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
+	
+	private static ScheduledFuture<?> watcherSchedule = null;
 	
 	static {
 		eventKinds.put("create", StandardWatchEventKinds.ENTRY_CREATE);
@@ -44,8 +48,7 @@ public final class DirectoryWatcherManager implements Runnable {
 		
 	}
 	
-	static void setUp() {
-		
+	static void setUp() {		
 		
 		if (running.compareAndSet(false, true) ) {
 			LOG.debug("Inizialiting DirectoryWatcherManager....");
@@ -64,8 +67,11 @@ public final class DirectoryWatcherManager implements Runnable {
 			                 .forEach(DirectoryWatcherManager::configure);
 				}
 				
-				if (!directoryWatchers.isEmpty()) {					
-					EXECUTOR_SERVICE.execute(new DirectoryWatcherManager());					
+				if (directoryWatchers.isEmpty()) {					
+					LOG.debug("No DirectoryWatcherManager founds");					
+				} else {
+					LOG.debug("Scheduling DirectoryWatcherManager events-loop");
+					watcherSchedule = executorService.scheduleAtFixedRate(new DirectoryWatcherManager(), POLLING_RATE, POLLING_RATE, TimeUnit.MILLISECONDS);
 				}
 			
 			} catch (XMLConfigException e) {
@@ -83,19 +89,19 @@ public final class DirectoryWatcherManager implements Runnable {
 		if (running.compareAndSet(true, false) ) {
 			
 			try {
-				if (EXECUTOR_SERVICE.awaitTermination(16, TimeUnit.SECONDS)) {
-					
-				} else {
-					EXECUTOR_SERVICE.shutdownNow();
-				}
-			} catch (InterruptedException e) {
+				
+				Optional.ofNullable(watcherSchedule).ifPresent(s -> s.cancel(false));				
+				executorService.shutdown();
+				
+				
+			} catch (Exception e) {
 				LOG.error("Error stopping executor service", e);
 				
 			}
 			
-			directoryWatchers.stream().forEach(DirectoryWatcher::dismiss);
-			
+			directoryWatchers.stream().forEach(DirectoryWatcher::dismiss);			
 			directoryWatchers.clear();
+			
 			LOG.debug("DirectoryWatcherManager stopped");
 		} else {
 			LOG.debug("DirectoryWatcherManager already stopped");
@@ -143,21 +149,14 @@ public final class DirectoryWatcherManager implements Runnable {
 
 	@Override
 	public void run() {
-		LOG.debug("Starting DirectoryWatcherManager events-loop");
-		running.compareAndSet(false, true);
-		
-		while(running.get()) {
-			for (DirectoryWatcher watcher: directoryWatchers) {
-				if (running.get()) {
-					watcher.processEvents();
-				} else {
-					LOG.debug("Stopping DirectoryWatcherManager DirectoryWatcher  events-loop");
-					break;
-				}
+		for (DirectoryWatcher watcher: directoryWatchers) {
+			if (running.get()) {
+				watcher.processEvents();
+			} else {
+				LOG.debug("Stopping DirectoryWatcherManager events-loop");
+				break;
 			}
 		}
-		
-		LOG.debug("Exiting from DirectoryWatcherManager events-loop");
 		
 	}
 
