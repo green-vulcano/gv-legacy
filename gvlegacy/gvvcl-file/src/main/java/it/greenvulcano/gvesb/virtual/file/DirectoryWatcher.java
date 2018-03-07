@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
@@ -13,8 +14,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +24,7 @@ import it.greenvulcano.gvesb.core.pool.GreenVulcanoPool;
 import it.greenvulcano.gvesb.core.pool.GreenVulcanoPoolException;
 import it.greenvulcano.gvesb.core.pool.GreenVulcanoPoolManager;
 
-public class DirectoryWatcher implements Runnable {
+public class DirectoryWatcher  {
 	private static final Logger LOG = LoggerFactory.getLogger(DirectoryWatcher.class);
 	private static final ExecutorService EXECUTOR_SERVICE = Executors.newWorkStealingPool();
 
@@ -38,7 +37,7 @@ public class DirectoryWatcher implements Runnable {
 	private final WatchKey watchKey;
 		
 	private final boolean processFileContent;
-	private final AtomicBoolean running; 
+	 
 	
 	public String getName() {
 		return name;
@@ -68,8 +67,7 @@ public class DirectoryWatcher implements Runnable {
 
 			this.service = service;
 			this.operation = operation;
-			this.running = new AtomicBoolean(false);
-			
+						
 			this.processFileContent = processFileContent;
 
 		} else {
@@ -78,20 +76,27 @@ public class DirectoryWatcher implements Runnable {
 
 	}
 	
-	void start(){
+	void processEvents() {
 		
-		if(running.compareAndSet(false, true)) {
-			Thread eventLoop = new Thread(this);
-			eventLoop.start();			
-			
-		}
-		
-		LOG.debug("DirectoryWatcher -"+name+" starting on "+directory);
-		
+		Optional.ofNullable(watcher.poll())
+		        .ifPresent(eventKey -> {
+		        	
+		        	eventKey.pollEvents()
+		        	        .stream()
+		        	        .map(this::buildGVBuffer)
+		        	        .filter(Optional::isPresent)
+		        	        .map(Optional::get)		        	        
+		        	        .map(GreenVulcanoExecutor::new)
+		        	        .forEach(EXECUTOR_SERVICE::submit);
+		        	
+		        	eventKey.reset();
+		        	
+		        });
+		      
 	}
 	
-	void stop() {
-		LOG.debug("DirectoryWatcher -"+name+" stopping on "+directory);
+	void dismiss() {
+		LOG.debug("DirectoryWatcher["+name+"] stopping on "+directory);
 		if(watchKey.isValid()) {
 			
 			watchKey.cancel();	
@@ -99,71 +104,48 @@ public class DirectoryWatcher implements Runnable {
 		}
 		
 		try {
-			watcher.close();			
+			watcher.close();
+			
+			EXECUTOR_SERVICE.shutdown();
 		} catch (IOException e) {
-			LOG.error("DirectoryWatcher -"+name+" interruped on "+directory, e);
-		} finally {
-			running.compareAndSet(true, false);
-		}		
+			LOG.error("DirectoryWatcher["+name+"] interruped on "+directory, e);
+		} 	
 		
 	}
-
-	private void processEvents() {
-
-		try {
-			
-			while(running.get()) {
-				WatchKey eventKey = watcher.take();
-				
-				LOG.debug("DirectoryWatcher -"+name+" processing event on "+directory);
-				for (WatchEvent<?> event: eventKey.pollEvents()) {
-					if (running.get()) {
-						buildGVBuffer(event)
-							.map(GreenVulcanoExecutor::new)
-						    .ifPresent(EXECUTOR_SERVICE::submit);
-					} else {
-						break;
-					}
-				}			
-			
-				eventKey.reset();
-				LOG.debug("DirectoryWatcher -"+name+" doing loop on "+directory);
-			}			
-	        
-			LOG.debug("DirectoryWatcher -"+name+" exit loop ");
-						
-		} catch (InterruptedException e) {
-			LOG.error("DirectoryWatcher -"+name+" interruped on "+directory, e);
-		}
-	}		
 
 	@SuppressWarnings("unchecked")
 	private Optional<GVBuffer> buildGVBuffer(WatchEvent<?> event) {
 		WatchEvent.Kind<?> kind = event.kind();
 
-		WatchEvent<Path> ev = (WatchEvent<Path>)event;
-		Path filename = ev.context();
+		if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
+			LOG.error("DirectoryWatcher["+name+"] on "+directory+" got OVERFLOW processing events: "+ event.context());
+		} else {
+		
+		
+			WatchEvent<Path> ev = (WatchEvent<Path>)event;
+			Path filename = ev.context();
+	
+			try {
+				GVBuffer gvbuffer = new GVBuffer();
+	
+				gvbuffer.setService(service);
+	
+				gvbuffer.setProperty("DIRECTORY_WATCHER_NAME", getName());
+				gvbuffer.setProperty("DIRECTORY_WATCHER_TARGET", getDirectory().toString());
+				gvbuffer.setProperty("DIRECTORY_WATCHER_FILE", filename.toString());
+				gvbuffer.setProperty("DIRECTORY_WATCHER_EVENT", kind.name());
+				
+				if (processFileContent && !StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
+					LOG.debug("DirectoryWatcher ["+name+"] process file content ");
+					gvbuffer.setObject(Files.readAllBytes(getDirectory().resolve(filename)));
+				}		
+	
+				return Optional.of(gvbuffer);
+			} catch (GVException | IOException e) {
+				LOG.error("DirectoryWatcher["+name+"] on "+directory+" fails building GVBuffer", e);
+			}
 
-		try {
-			GVBuffer gvbuffer = new GVBuffer();
-
-			gvbuffer.setService(service);
-
-			gvbuffer.setProperty("DIRECTORY_WATCHER_NAME", getName());
-			gvbuffer.setProperty("DIRECTORY_WATCHER_TARGET", getDirectory().toString());
-			gvbuffer.setProperty("DIRECTORY_WATCHER_FILE", filename.toString());
-			gvbuffer.setProperty("DIRECTORY_WATCHER_EVENT", kind.name());
-			
-			if (processFileContent) {
-				LOG.debug("DirectoryWatcher -"+name+" process file content ");
-				gvbuffer.setObject(Files.readAllBytes(getDirectory().resolve(filename)));
-			}		
-
-			return Optional.of(gvbuffer);
-		} catch (GVException | IOException e) {
-			LOG.error("DirectoryWatcher -"+name+" on "+directory+": error building GVBuffer", e);
 		}
-
 		return Optional.empty();
 	}
 
@@ -185,13 +167,13 @@ public class DirectoryWatcher implements Runnable {
 		@Override
 		public void run() {
 			try {
-				LOG.debug("DirectoryWatcher -"+name+" forwarding event to "+inputBuffer.getService()+"/"+getOperation());
+				LOG.debug("DirectoryWatcher ["+name+"] forwarding event to "+inputBuffer.getService()+"/"+getOperation());
 				greenVulcano.forward(inputBuffer, getOperation());
 
 			} catch (GVPublicException e) {
-				LOG.error("DirectoryWatcher -"+name+" on "+directory+": error in forward ", e);
+				LOG.error("DirectoryWatcher ["+name+"] on "+directory+" got error in forward ", e);
 			} catch (GreenVulcanoPoolException e) {
-				LOG.error("DirectoryWatcher -"+name+" on "+directory+": error getting pool instance", e);
+				LOG.error("DirectoryWatcher ["+name+"] on "+directory+" got error getting pool instance", e);
 			}
 
 		}
@@ -240,13 +222,6 @@ public class DirectoryWatcher implements Runnable {
 			return false;
 		return true;
 	}
-
-	@Override
-	public void run() {
-		processEvents();
-		
-	}
-
 	
 
 }

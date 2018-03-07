@@ -10,6 +10,10 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
@@ -21,47 +25,84 @@ import it.greenvulcano.configuration.XMLConfig;
 import it.greenvulcano.configuration.XMLConfigException;
 import it.greenvulcano.gvesb.core.config.GreenVulcanoConfig;
 
-public final class DirectoryWatcherManager {
+public final class DirectoryWatcherManager implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(DirectoryWatcherManager.class);
 	
 	private final static Set<DirectoryWatcher> directoryWatchers = new LinkedHashSet<>();	
 	private final static Map<String, Kind<Path>> eventKinds = new  LinkedHashMap<>();
+	
+	private static final AtomicBoolean running;
+	
+	private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 	
 	static {
 		eventKinds.put("create", StandardWatchEventKinds.ENTRY_CREATE);
 		eventKinds.put("delete", StandardWatchEventKinds.ENTRY_DELETE);
 		eventKinds.put("modify", StandardWatchEventKinds.ENTRY_MODIFY);
 		
+		running = new AtomicBoolean(false);
+		
 	}
 	
 	static void setUp() {
-		LOG.debug("Inizialiting FileAdapter");
 		
-		try {
-			NodeList fileChannelList = XMLConfig.getNodeList(GreenVulcanoConfig.getSystemsConfigFileName(),"//Channel[@type='FileAdapter' and @enabled='true']");
 		
-			LOG.debug("Enabled FileAdapter channels found: "+fileChannelList.getLength());
+		if (running.compareAndSet(false, true) ) {
+			LOG.debug("Inizialiting DirectoryWatcherManager....");
 			
-			for (int i = 0; i<fileChannelList.getLength(); i++) {
-				Node fileAdapter = fileChannelList.item(i);
+			try {
+				NodeList fileChannelList = XMLConfig.getNodeList(GreenVulcanoConfig.getSystemsConfigFileName(),"//Channel[@type='FileAdapter' and @enabled='true']");
+			
+				LOG.debug("Enabled FileAdapter channels found: "+fileChannelList.getLength());
 				
-				NodeList directoryWatcherList = XMLConfig.getNodeList(fileAdapter,"./directory-watcher");
-				IntStream.range(0, directoryWatcherList.getLength())
-		                 .mapToObj(directoryWatcherList::item)		         
-		                 .forEach(DirectoryWatcherManager::configure);
-			}
+				for (int i = 0; i<fileChannelList.getLength(); i++) {
+					Node fileAdapter = fileChannelList.item(i);
+					
+					NodeList directoryWatcherList = XMLConfig.getNodeList(fileAdapter,"./directory-watcher");
+					IntStream.range(0, directoryWatcherList.getLength())
+			                 .mapToObj(directoryWatcherList::item)		         
+			                 .forEach(DirectoryWatcherManager::configure);
+				}
+				
+				if (!directoryWatchers.isEmpty()) {					
+					EXECUTOR_SERVICE.execute(new DirectoryWatcherManager());					
+				}
+			
+			} catch (XMLConfigException e) {
+				LOG.error("Error reading configuration", e);
+			}			
 		
-		} catch (XMLConfigException e) {
-			LOG.error("Error reading configuration", e);
+		} else {
+			LOG.debug("DirectoryWatcherManager already running");
 		}
-		
-		directoryWatchers.stream().forEach(DirectoryWatcher::start);
 	}
 	
 	static void shutDown() {
-		LOG.debug("Finalizing FileAdapter");
-		directoryWatchers.stream().forEach(DirectoryWatcher::stop);
-		directoryWatchers.clear();
+		LOG.debug("Finalizing FileAdapter....");
+		
+		if (running.compareAndSet(true, false) ) {
+			
+			try {
+				if (EXECUTOR_SERVICE.awaitTermination(16, TimeUnit.SECONDS)) {
+					
+				} else {
+					EXECUTOR_SERVICE.shutdownNow();
+				}
+			} catch (InterruptedException e) {
+				LOG.error("Error stopping executor service", e);
+				
+			}
+			
+			directoryWatchers.stream().forEach(DirectoryWatcher::dismiss);
+			
+			directoryWatchers.clear();
+			LOG.debug("DirectoryWatcherManager stopped");
+		} else {
+			LOG.debug("DirectoryWatcherManager already stopped");
+		}
+		
+		
+		
 	}
 	
 	private static void configure(Node directoryWatcherNode) {
@@ -93,10 +134,31 @@ public final class DirectoryWatcherManager {
 		} catch (XMLConfigException e) {
 			LOG.error("Error reading configuration", e);
 		} catch (IOException e) {
-			LOG.error("Error configurind DirectoryWatcher", e);
+			LOG.error("Error configuring DirectoryWatcherManager", e);
 		}
 	}
 	
-	
+	private DirectoryWatcherManager() {		
+	}
+
+	@Override
+	public void run() {
+		LOG.debug("Starting DirectoryWatcherManager events-loop");
+		running.compareAndSet(false, true);
+		
+		while(running.get()) {
+			for (DirectoryWatcher watcher: directoryWatchers) {
+				if (running.get()) {
+					watcher.processEvents();
+				} else {
+					LOG.debug("Stopping DirectoryWatcherManager DirectoryWatcher  events-loop");
+					break;
+				}
+			}
+		}
+		
+		LOG.debug("Exiting from DirectoryWatcherManager events-loop");
+		
+	}
 
 }
