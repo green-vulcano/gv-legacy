@@ -19,8 +19,14 @@
  *******************************************************************************/
 package it.greenvulcano.gvesb.virtual.smtp;
 
+import java.io.IOException;
+
 import javax.mail.Message;
+import javax.mail.MessagingException;
 import javax.mail.Multipart;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMessage.RecipientType;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
@@ -33,6 +39,7 @@ import com.icegreen.greenmail.util.ServerSetup;
 import it.greenvulcano.configuration.XMLConfig;
 import it.greenvulcano.gvesb.buffer.GVBuffer;
 import it.greenvulcano.gvesb.virtual.CallOperation;
+import it.greenvulcano.gvesb.virtual.utils.MimeMessageHelper;
 import junit.framework.TestCase;
 
 public class SMTPCallOperationTest extends TestCase {
@@ -64,6 +71,24 @@ public class SMTPCallOperationTest extends TestCase {
         server.start();
 
         context = new InitialContext();
+    }
+    
+    public void testMimeMessageHelper() throws AddressException, IOException, MessagingException {
+    	
+    	String message = "Hello MimeMessageHelper";
+    	String from = "r.lagrotteria@greenvulcano.com";
+    	String to = "hr@greenvulcano.com";
+    	
+    	String email = MimeMessageHelper.createEmailMessage(from, to)
+    			                        .setTextBody(message)
+    			                        .getEncodedMimeMessage();
+    	
+    	MimeMessage mimeMessage = MimeMessageHelper.decode(email);
+    	
+    	assertEquals(mimeMessage.getFrom()[0].toString(), from);
+    	assertEquals(mimeMessage.getRecipients(RecipientType.TO)[0].toString(), to);
+    	assertEquals(mimeMessage.getContent().toString(), message);
+    	
     }
 	
 	/**

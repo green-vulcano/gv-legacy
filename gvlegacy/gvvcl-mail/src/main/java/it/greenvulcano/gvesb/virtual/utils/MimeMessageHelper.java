@@ -19,6 +19,7 @@
  *******************************************************************************/
 package it.greenvulcano.gvesb.virtual.utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashSet;
@@ -67,6 +68,19 @@ public class MimeMessageHelper {
 		}
 
 		return new MimeMessageHelper(email);
+	}
+	
+	public static MimeMessage decode(byte[] message) throws MessagingException {
+		Properties props = new Properties();
+		Session session = Session.getDefaultInstance(props, null);
+
+		MimeMessage email = new MimeMessage(session, new ByteArrayInputStream(message));
+		
+		return email;
+	}
+	
+	public static MimeMessage decode(String message) throws MessagingException {
+		return decode(Base64.decodeBase64(message));
 	}
 	
 	public MimeMessageHelper setSubject(String subject) throws MessagingException {
