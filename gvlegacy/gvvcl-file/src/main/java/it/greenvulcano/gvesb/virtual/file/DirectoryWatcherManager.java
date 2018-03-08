@@ -88,11 +88,8 @@ public final class DirectoryWatcherManager implements Runnable {
 		
 		if (running.compareAndSet(true, false) ) {
 			
-			try {
-				
+			try {				
 				Optional.ofNullable(watcherSchedule).ifPresent(s -> s.cancel(false));				
-				executorService.shutdown();
-				
 				
 			} catch (Exception e) {
 				LOG.error("Error stopping executor service", e);

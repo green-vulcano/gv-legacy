@@ -97,16 +97,12 @@ public class DirectoryWatcher  {
 	
 	void dismiss() {
 		LOG.debug("DirectoryWatcher["+name+"] stopping on "+directory);
-		if(watchKey.isValid()) {
-			
-			watchKey.cancel();	
-			
+		if(watchKey.isValid()) {			
+			watchKey.cancel();			
 		}
 		
 		try {
 			watcher.close();
-			
-			executorService.shutdown();
 		} catch (IOException e) {
 			LOG.error("DirectoryWatcher["+name+"] interruped on "+directory, e);
 		} 	
