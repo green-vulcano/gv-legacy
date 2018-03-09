@@ -20,6 +20,7 @@
 package it.greenvulcano.gvesb.virtual.smtp;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -30,6 +31,7 @@ import javax.mail.internet.MimeMessage.RecipientType;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
+import org.apache.commons.codec.binary.Base64;
 import org.w3c.dom.Node;
 
 import com.icegreen.greenmail.util.GreenMail;
@@ -79,15 +81,25 @@ public class SMTPCallOperationTest extends TestCase {
     	String from = "r.lagrotteria@greenvulcano.com";
     	String to = "hr@greenvulcano.com";
     	
+    	String attachemnt1 = Base64.encodeBase64String("test1111111111".getBytes());
+    	String attachemnt2 = Base64.encodeBase64String("test2222222222".getBytes());
+    	
     	String email = MimeMessageHelper.createEmailMessage(from, to)
     			                        .setTextBody(message)
+    			                        .addAttachment("test1.txt", "text/plain", attachemnt1)
+    			                        .addAttachment("test2.txt", "text/plain", attachemnt2)
     			                        .getEncodedMimeMessage();
     	
     	MimeMessage mimeMessage = MimeMessageHelper.decode(email);
     	
-    	assertEquals(mimeMessage.getFrom()[0].toString(), from);
-    	assertEquals(mimeMessage.getRecipients(RecipientType.TO)[0].toString(), to);
-    	assertEquals(mimeMessage.getContent().toString(), message);
+    	assertEquals(from, mimeMessage.getFrom()[0].toString());
+    	assertEquals(to, mimeMessage.getRecipients(RecipientType.TO)[0].toString());
+    	    	
+    	List<MimeMessageHelper.Attachment> attachments = MimeMessageHelper.getMessageAttachments(mimeMessage);
+    	
+    	assertEquals(2, attachments.size());
+    	
+    	assertEquals(attachemnt2, attachments.stream().filter(a -> a.getFileName().equals("test2.txt")).map(a->a.getContent()).findFirst().get());
     	
     }
 	
