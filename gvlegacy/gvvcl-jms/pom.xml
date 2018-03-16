@@ -66,7 +66,7 @@
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Version>${project.version}</Bundle-Version>
-                        <Bundle-Activator>it.greenvulcano.gvesb.virtual.j2ee.Activator</Bundle-Activator>
+                        <Bundle-Activator>it.greenvulcano.gvesb.core.forward.Activator</Bundle-Activator>
                         <Export-Package/>
                         <Import-Package>
                            	javax.jms,
@@ -90,6 +90,7 @@
 							it.greenvulcano.util.clazz,
 							it.greenvulcano.util.thread,
                             it.greenvulcano.util.metadata,
+                            it.greenvulcano.util.xpath,
                             it.greenvulcano.event.util.shutdown,
                             it.greenvulcano.gvesb.core.exc,
                             it.greenvulcano.jmx,

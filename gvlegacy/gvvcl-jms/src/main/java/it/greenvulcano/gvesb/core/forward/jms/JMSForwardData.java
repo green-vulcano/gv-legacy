@@ -29,6 +29,7 @@ import it.greenvulcano.jmx.JMXEntryPoint;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -102,6 +103,8 @@ public class JMSForwardData
     private long                   reconnectInterval    = -1;
     private int                    readBlockCount       = -1;
 
+    private String clientId = null;
+    
     /**
      * Keeps reference to <code>IDataProvider</code> implementation.
      */
@@ -174,7 +177,9 @@ public class JMSForwardData
             connectionFactory = XMLConfig.get(fdNode, "@connection-factory");
             transacted = XMLConfig.getBoolean(fdNode, "@transacted", false);
 
-            connectionHolder = new JMSConnectionHolder(connectionFactory, transacted);
+            clientId = XMLConfig.get(fdNode, "@clientId");
+            
+            connectionHolder = new JMSConnectionHolder(connectionFactory, Optional.ofNullable(clientId).orElse(name), transacted);
             connectionHolder.setDebug(debug);
 
             initialSize = XMLConfig.getInteger(fdNode, "@initial-size", DEFAULT_INITIAL_SIZE);
@@ -186,6 +191,8 @@ public class JMSForwardData
                 throw new IllegalArgumentException("initialSize(" + initialSize + ") > maximumSize(" + maximumSize
                         + "), forwardName=" + forwardName);
             }
+            
+           
 
             String destinationType = XMLConfig.get(fdNode, "@destination-type", "queue");
             isQueue = destinationType.equals("queue");

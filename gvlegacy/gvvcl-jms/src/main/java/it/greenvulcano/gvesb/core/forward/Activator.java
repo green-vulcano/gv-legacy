@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with GreenVulcano ESB. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package it.greenvulcano.gvesb.virtual.j2ee;
+package it.greenvulcano.gvesb.core.forward;
 
 import java.util.Optional;
 
@@ -25,9 +25,10 @@ import javax.management.ObjectName;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import org.slf4j.LoggerFactory;
-
-import it.greenvulcano.gvesb.core.forward.JMSForwardManager;
+import org.slf4j.Logger;
+import it.greenvulcano.configuration.ConfigurationEvent;
+import it.greenvulcano.configuration.ConfigurationListener;
+import it.greenvulcano.configuration.XMLConfig;
 import it.greenvulcano.gvesb.gvdp.DataProviderManager;
 import it.greenvulcano.gvesb.gvdp.impl.JMSBytesMessageDataProvider;
 import it.greenvulcano.gvesb.gvdp.impl.JMSMapMessageDataProvider;
@@ -35,17 +36,35 @@ import it.greenvulcano.gvesb.gvdp.impl.JMSObjectMessageDataProvider;
 import it.greenvulcano.gvesb.gvdp.impl.JMSStreamMessageDataProvider;
 import it.greenvulcano.gvesb.gvdp.impl.JMSTextMessageDataProvider;
 import it.greenvulcano.gvesb.virtual.OperationFactory;
+import it.greenvulcano.gvesb.virtual.j2ee.JMSDequeueOperation;
+import it.greenvulcano.gvesb.virtual.j2ee.JMSEnqueueOperation;
 import it.greenvulcano.jmx.JMXEntryPoint;
 
 public class Activator implements BundleActivator {
 
+	private static final Logger LOG   = org.slf4j.LoggerFactory.getLogger(Activator.class);
+	
 	private static Optional<ObjectName> jmxObjectName = Optional.empty();
+	
+	private final static ConfigurationListener configurationListener = event-> {
+		
+		
+		LOG.debug("GV JMS Plugin - handling configuration event");
+		
+		if ((event.getCode() == ConfigurationEvent.EVT_FILE_REMOVED) && event.getFile().equals(JMSForwardManager.JMS_FORWARD_FILE_NAME)) {
+			LOG.info("Calling JMSForwardManager destroy on configuration event "+ event.getDescription());
+			JMSForwardManager.destroy();
+		}
+		
+		if ((event.getCode() == ConfigurationEvent.EVT_FILE_LOADED) && event.getFile().equals(JMSForwardManager.JMS_FORWARD_FILE_NAME)) {
+			LOG.info("Calling JMSForwardManager init on configuration event "+ event.getDescription());
+			JMSForwardManager.init();
+		}
+	};
 	
 	@Override
 	public void start(BundleContext context) throws Exception {
-		
-		LoggerFactory.getLogger(getClass()).debug("*********** VCL JMS Up&Running ");
-		
+			
 		DataProviderManager.registerSupplier("JMSBytesMessageDataProvider", JMSBytesMessageDataProvider::new);
 		DataProviderManager.registerSupplier("JMSMapMessageDataProvider", JMSMapMessageDataProvider::new);
 		DataProviderManager.registerSupplier("JMSObjectMessageDataProvider", JMSObjectMessageDataProvider::new);
@@ -55,17 +74,19 @@ public class Activator implements BundleActivator {
 		OperationFactory.registerSupplier("jms-enqueue", JMSEnqueueOperation::new);
 		OperationFactory.registerSupplier("jms-dequeue", JMSDequeueOperation::new);
 		
-		try {
-			JMSForwardManager jmsForwardManager = JMSForwardManager.instance();
-			jmxObjectName = Optional.ofNullable(JMXEntryPoint.getInstance().registerObject(jmsForwardManager, JMSForwardManager.DESCRIPTOR_NAME));
-		} catch (Exception e) {
-			LoggerFactory.getLogger(getClass()).error("Fail to setup JMSForwardManager", e);
-		}
-
+		JMSForwardManager.init();
+		
+		//jmxObjectName = Optional.ofNullable(JMXEntryPoint.getInstance().registerObject(jmsForwardManager, JMSForwardManager.DESCRIPTOR_NAME));
+		
+		XMLConfig.addConfigurationListener(configurationListener, JMSForwardManager.JMS_FORWARD_FILE_NAME);
+		
+		LOG.debug("*********** VCL JMS Up&Running ");
 	}
 
 	@Override
 	public void stop(BundleContext context) throws Exception {
+		
+		XMLConfig.removeConfigurationListener(configurationListener);
 		
 		DataProviderManager.unregisterSupplier("JMSBytesMessageDataProvider");
 		DataProviderManager.unregisterSupplier("JMSMapMessageDataProvider");
@@ -80,18 +101,12 @@ public class Activator implements BundleActivator {
 			jmxObjectName.ifPresent(JMXEntryPoint.getInstance()::unregisterObject);
 			
 		} catch (Exception e) {
-			LoggerFactory.getLogger(getClass()).error("Fail to remove JMSForwardManager object name", e);
+			LOG.error("Fail to remove JMSForwardManager object name", e);
 		}
 		
-		try {
-			JMSForwardManager.instance().destroy();
-			
-		} catch (Exception e) {
-			LoggerFactory.getLogger(getClass()).error("Fail to destroy JMSForwardManager", e);
-		}
+		JMSForwardManager.destroy();		
 		
-		
-		LoggerFactory.getLogger(getClass()).debug("*********** VCL JMS Stopped ");
+		LOG.debug("*********** VCL JMS Stopped ");
 
 	}
 

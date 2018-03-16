@@ -40,14 +40,15 @@ public class JMSConnectionHolder implements ExceptionListener
     private String              connectionFactory;
     private boolean             transacted = false;
     private Connection          connection = null;
-    private String              key;
+    private String              key,clientId;
     private boolean             debug      = false;
 
-    public JMSConnectionHolder(String connectionFactory, boolean transacted)
+    public JMSConnectionHolder(String connectionFactory, String clientId, boolean transacted)
     {
         this.connectionFactory = connectionFactory;
         this.transacted = transacted;
         this.key = connectionFactory + "#" + transacted;
+        this.clientId = clientId;
     }
 
     /**
@@ -62,15 +63,21 @@ public class JMSConnectionHolder implements ExceptionListener
      */
     public Connection getConnection(JNDIHelper initialContext) throws Exception
     {
-        /*if (debug) {
+        if (debug) {
             logger.debug("BEGIN getConnection: factory: " + key);
-        }*/
+        }
         try {
             if (connection == null) {
                 synchronized (this) {
                     if (connection == null) {
                         connection = createConnection(initialContext, connectionFactory, transacted, debug);
+                        try {
+                        	connection.setClientID(clientId);
+                        } catch (Exception e) {
+                        	logger.error("EXCEPTION on connection.setClientID: factory: " + key, e);
+						}
                         connection.setExceptionListener(this);
+                        
                     }
                 }
             }
@@ -82,9 +89,9 @@ public class JMSConnectionHolder implements ExceptionListener
             throw exc;
         }
         finally {
-            /*if (debug) {
+            if (debug) {
                 logger.debug("END getConnection: factory: " + key);
-            }*/
+            }
         }
     }
 
@@ -115,7 +122,7 @@ public class JMSConnectionHolder implements ExceptionListener
                 connection.close();
             }
             catch (Exception exc) {
-                // do nothing
+            	logger.error("Error closing Connection - factory: " + connectionFactory + "#" + transacted, exc);
             }
         }
         connection = null;

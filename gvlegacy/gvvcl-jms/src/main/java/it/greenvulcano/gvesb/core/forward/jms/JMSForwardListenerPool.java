@@ -222,13 +222,23 @@ public class JMSForwardListenerPool implements RejectedExecutionHandler
      */
     public void destroy()
     {
-        logger.debug("Forward [" + name + "/" + forwardName + "] - Begin destroying instances");
-        if (data != null) {
-            data.destroy();
-        }
-        data = null;
-        executor.shutdown();
-        executor = null;
+        logger.debug("Forward [" + name + "/" + forwardName + "] - Begin destroying instances");      
+      
+        if (data!=null) {
+        	data.destroy();        	
+        } 
+        
+        try {
+			if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+				executor.shutdownNow();
+			}
+		} catch (InterruptedException e) {
+			executor.shutdown();
+		}        
+        
+        executor = null;        
+        data=null;
+                   
         logger.debug("Forward [" + name + "/" + forwardName + "] - End destroying instances");
     }
 
