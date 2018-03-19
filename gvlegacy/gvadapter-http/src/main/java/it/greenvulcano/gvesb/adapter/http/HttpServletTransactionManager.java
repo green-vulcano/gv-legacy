@@ -250,7 +250,7 @@ public class HttpServletTransactionManager
                 }
             }
 
-            xaHelper = new XAHelper();
+            xaHelper = new XAHelper(XAHelper.DEFAULT_JDNI_NAME);
         }
         catch (Exception exc) {
             transactions.clear();
