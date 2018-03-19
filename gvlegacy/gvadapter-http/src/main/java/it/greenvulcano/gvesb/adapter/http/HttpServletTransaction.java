@@ -27,15 +27,14 @@ import org.w3c.dom.Node;
  *
  * HttpServletTransaction class
  *
- * @version 3.1.0 Feb 07, 2011
+ * @version 4.0.0 MAr 19, 2018
  * @author GreenVulcano Developer Team
  *
  *
  */
-public class HttpServletTransaction
-{
-    private String  system           = "";
-    private String  service          = "";
+public class HttpServletTransaction {
+	
+    private String  service          = "";    
     private String  operation        = "";
     private boolean transacted       = false;
     private int     timeout          = 30;
@@ -46,8 +45,7 @@ public class HttpServletTransaction
      */
     public void init(Node node)
     {
-        service = XMLConfig.get(node, "@service", "");
-        system = XMLConfig.get(node, "@system", "ALL");
+        service = XMLConfig.get(node, "@service", "");       
         operation = XMLConfig.get(node, "@operation", "");
         transacted = XMLConfig.getBoolean(node, "@transacted", false);
         timeout = XMLConfig.getInteger(node, "@timeout", 30);
@@ -81,17 +79,7 @@ public class HttpServletTransaction
     /**
      * @return the key
      */
-    public String getKey()
-    {
-        if ("".equals(system) && "".equals(operation)) {
-            return service;
-        }
-        else if ("".equals(operation)) {
-            return (service + "::" + system);
-        }
-        else if ("".equals(system)) {
-            return (service + "::" + operation);
-        }
-        return (service + "::" + system + "::" + operation);
+    public String getKey()  {
+    	 return (service + "::" + operation);
     }
 }

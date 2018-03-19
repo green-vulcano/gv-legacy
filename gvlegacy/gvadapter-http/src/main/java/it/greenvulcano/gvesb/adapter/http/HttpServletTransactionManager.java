@@ -24,7 +24,6 @@ import it.greenvulcano.gvesb.adapter.http.exc.HttpServletTransactionException;
 import it.greenvulcano.gvesb.adapter.http.formatters.handlers.AdapterHttpConfigurationException;
 import it.greenvulcano.gvesb.adapter.http.formatters.handlers.GVTransactionInfo;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpConstants;
-import it.greenvulcano.gvesb.buffer.GVBuffer;
 import it.greenvulcano.gvesb.j2ee.XAHelper;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +36,7 @@ import org.w3c.dom.NodeList;
  * 
  * HttpServletTransactionManager class
  * 
- * @version 3.0.0 Feb 17, 2010
+ * @version 4.0.0 Mar 19, 2018
  * @author GreenVulcano Developer Team
  * 
  * 
@@ -59,9 +58,9 @@ public class HttpServletTransactionManager
      * @param data
      * @throws HttpServletTransactionException
      */
-    public void begin(GVBuffer data) throws HttpServletTransactionException
+    public void begin(String service, String operation) throws HttpServletTransactionException
     {
-        String key = getKey(data);
+        String key = service+"::"+operation;
         begin(key);
     }
 
@@ -71,9 +70,9 @@ public class HttpServletTransactionManager
      * @param beforeResponse
      * @throws HttpServletTransactionException
      */
-    public void commit(GVBuffer data, boolean beforeResponse) throws HttpServletTransactionException
+    public void commit(String service, String operation, boolean beforeResponse) throws HttpServletTransactionException
     {
-        String key = getKey(data);
+        String key = service+"::"+operation;
         commit(key, beforeResponse);
     }
 
@@ -82,9 +81,9 @@ public class HttpServletTransactionManager
      * @param beforeResponse
      * @throws HttpServletTransactionException
      */
-    public void rollback(GVBuffer data, boolean beforeResponse) throws HttpServletTransactionException
+    public void rollback(String service, String operation, boolean beforeResponse) throws HttpServletTransactionException
     {
-        String key = getKey(data);
+        String key = service+"::"+operation;
         rollback(key, beforeResponse);
     }
 
@@ -263,25 +262,17 @@ public class HttpServletTransactionManager
     /**
      *
      */
-    public void destroy()
-    {
+    public void destroy() {
         transactions.clear();
-    }
-    
-    /**
-     * @param data
-     * @return
-     */
-    private String getKey(GVBuffer data) {
-        return data.getService() + "::" + data.getSystem();
-    }
+    }  
+   
 
     /**
      * @param transInfo
      * @return
      */
     private String getKey(GVTransactionInfo transInfo) {
-        return transInfo.getService() + "::" + transInfo.getSystem();
+        return transInfo.getService() + "::" + transInfo.getOperation();
     }
 
 }

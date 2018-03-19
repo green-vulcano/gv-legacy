@@ -170,7 +170,7 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
             NMDC.setOperation(operationType);
             logger.info(GVFormatLog.formatBEGINOperation(request).toString());
 
-            transactionManager.begin(request);
+            transactionManager.begin(request.getService(), operationType);
 
             response = executeService(operationType, request);
 
