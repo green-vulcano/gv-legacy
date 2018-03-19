@@ -319,7 +319,9 @@ public class RESTHttpServletMapping implements HttpServletMapping
         }
         catch (Throwable exc) {
         	exception = exc;
-        	         
+        	transInfo.setErrorCode(-1);         
+        	
+        	
             logger.error("handleRequest - Service request failed", exc);
             try {
             	 if (exc.getMessage().contains("GV_SERVICE_POLICY_ERROR")) {
