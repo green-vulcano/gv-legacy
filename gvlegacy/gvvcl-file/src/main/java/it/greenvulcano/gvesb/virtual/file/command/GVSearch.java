@@ -22,20 +22,16 @@ package it.greenvulcano.gvesb.virtual.file.command;
 import it.greenvulcano.configuration.XMLConfig;
 import it.greenvulcano.gvesb.buffer.GVBuffer;
 import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
-import it.greenvulcano.util.file.FileManager;
-import it.greenvulcano.util.file.FileNameSorter;
-import it.greenvulcano.util.file.FileProperties;
+import it.greenvulcano.gvesb.virtual.CallException;
 import it.greenvulcano.util.metadata.PropertiesHandler;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 
 /**
@@ -47,9 +43,7 @@ import org.w3c.dom.Node;
  * 
  * 
  */
-public class GVSearch implements GVFileCommand
-{
-    private static Logger logger = LoggerFactory.getLogger(GVSearch.class);
+public class GVSearch implements GVFileCommand {
 
     /**
      * Absolute path of the directory to search in.
@@ -70,6 +64,8 @@ public class GVSearch implements GVFileCommand
      * If true an internal error interrupts the command sequence. Default true.
      */
     private boolean       isCritical;
+    
+    private boolean recursive,returnCollection;
 
     /**
      * do nothing
@@ -97,6 +93,9 @@ public class GVSearch implements GVFileCommand
         filePattern = XMLConfig.get(node, "@filePattern", "");
         returnFullPath = XMLConfig.getBoolean(node, "@returnFullPath", false);
         isCritical = XMLConfig.getBoolean(node, "@isCritical", true);
+        
+        recursive = XMLConfig.getBoolean(node, "@recursive", false);
+        returnCollection = XMLConfig.getBoolean(node, "@returnCollection", false);
     }
 
     /**
@@ -124,42 +123,45 @@ public class GVSearch implements GVFileCommand
      * @throws Exception
      */
     @Override
-    public void execute(GVBuffer gvBuffer) throws Exception
-    {
+    public void execute(GVBuffer gvBuffer) throws Exception  {
         try {
             PropertiesHandler.enableExceptionOnErrors();
             Map<String, Object> params = GVBufferPropertiesHelper.getPropertiesMapSO(gvBuffer, true);
             String currSourcePath = PropertiesHandler.expand(sourcePath, params, gvBuffer);
             String currFile = PropertiesHandler.expand(filePattern, params, gvBuffer);
 
-            Set<FileProperties> results = FileManager.ls(currSourcePath, currFile);
-            int resultsSize = results.size();
-
-            gvBuffer.setProperty(GVFM_FOUND_FILES_NUM, "" + resultsSize);
+            Set<String> results;
             
-            boolean result = (resultsSize > 0);
-            if (result) {
-                StringBuilder buf = new StringBuilder();
-                List<FileProperties> fm_files = new ArrayList<FileProperties>(resultsSize);
-                fm_files.addAll(results);
-                Collections.sort(fm_files, new FileNameSorter(true));
-                for (FileProperties currFileInfo : fm_files) {
-                    String filename = currFileInfo.getName();
-                    if (returnFullPath) {
-                        buf.append(currSourcePath).append(File.separator);
-                    }
-                    buf.append(filename).append(";");
-                }
-                if (buf.length() > 1) {
-                    buf.deleteCharAt(buf.length() - 1);
-                }
-                logger.debug("File (" + resultsSize + ") matching the pattern '" + currFile
-                        + "' found within directory " + currSourcePath);
-                logger.debug(buf.toString());
-                gvBuffer.setProperty(GVFM_FOUND_FILES_LIST, buf.toString());
+            if (recursive) {
+            	
+            	results= Files.walk(Paths.get(currSourcePath))					        	     
+    					     .filter(p -> p.getFileName().toString().matches(Optional.ofNullable(currFile).orElse(".*")))
+    					     .map(p -> returnFullPath? p.toAbsolutePath().toString():p.getFileName().toString())    					     
+    					     .collect(Collectors.toSet());
+            	
+            } else {
+            	results = Files.list(Paths.get(currSourcePath))
+            			       .filter(p -> p.getFileName().toString().matches(Optional.ofNullable(currFile).orElse(".*")))
+					           .map(p -> returnFullPath? p.toAbsolutePath().toString():p.getFileName().toString())    					     
+					           .collect(Collectors.toSet());
             }
-        }
-        finally {
+                      
+           
+            gvBuffer.setProperty(GVFM_FOUND_FILES_NUM, String.valueOf(results.size()));
+            
+           
+            if (results.size() > 0) {                
+                gvBuffer.setProperty(GVFM_FOUND_FILES_LIST, results.stream().collect(Collectors.joining(";")));
+            }
+            
+            if (returnCollection) {
+            	gvBuffer.setObject(results);
+            }
+        }  catch (Exception exc) {
+            throw new CallException("GV_CALL_SERVICE_ERROR", new String[][]{{"service", gvBuffer.getService()},
+                {"system", gvBuffer.getSystem()}, {"tid", gvBuffer.getId().toString()},
+                {"message", exc.getMessage()}}, exc);
+        }    finally {
             PropertiesHandler.disableExceptionOnErrors();
         }
     }

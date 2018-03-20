@@ -308,12 +308,14 @@ public class RESTHttpServletMapping implements HttpServletMapping
             transactionManager.begin(request.getService(), operationType);
 
             response = executeService(operationType, request);
-
-            transactionManager.commit(transInfo, true);
-
-            manageHttpResponse(response, resp);
-
-            transactionManager.commit(transInfo, false);
+            
+            if (response.getPropertyNamesSet().contains("HTTP_FORCE_TX_ROLLBACK")) {
+            	transInfo.setErrorCode(-1);
+            } else {
+	            transactionManager.commit(transInfo, true);	
+	            manageHttpResponse(response, resp);	
+	            transactionManager.commit(transInfo, false);
+            }
                      
             logger.debug("handleRequest stop");
         }
