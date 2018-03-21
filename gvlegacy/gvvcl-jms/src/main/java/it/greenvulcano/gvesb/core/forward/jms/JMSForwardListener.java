@@ -40,6 +40,7 @@ import it.greenvulcano.util.metadata.PropertiesHandler;
 import it.greenvulcano.util.thread.ThreadMap;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -400,7 +401,8 @@ public class JMSForwardListener implements Runnable
             }
             
 
-            Connection connection = data.getConnectionHolder().getConnection(initialContext);
+            Connection connection = data.getConnectionHolder().getConnection(initialContext, Optional.ofNullable(data.getClientId())
+            		                                                                                                 .orElseGet(()->Thread.currentThread().getName()));
 
             String localSelector = data.getMessageSelector();
             if (!"".equals(localSelector)) {

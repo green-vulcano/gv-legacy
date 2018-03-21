@@ -29,7 +29,6 @@ import it.greenvulcano.jmx.JMXEntryPoint;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -179,7 +178,7 @@ public class JMSForwardData
 
             clientId = XMLConfig.get(fdNode, "@clientId");
             
-            connectionHolder = new JMSConnectionHolder(connectionFactory, Optional.ofNullable(clientId).orElse(name), transacted);
+            connectionHolder = new JMSConnectionHolder(connectionFactory, transacted);
             connectionHolder.setDebug(debug);
 
             initialSize = XMLConfig.getInteger(fdNode, "@initial-size", DEFAULT_INITIAL_SIZE);
@@ -409,6 +408,10 @@ public class JMSForwardData
     {
         this.reconnectInterval = reconnectInterval;
     }
+    
+    public String getClientId() {
+		return clientId;
+	}
 
     /**
      * @return the readBlockCount

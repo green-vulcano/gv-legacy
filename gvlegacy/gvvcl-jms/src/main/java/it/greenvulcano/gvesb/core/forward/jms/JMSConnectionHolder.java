@@ -40,15 +40,14 @@ public class JMSConnectionHolder implements ExceptionListener
     private String              connectionFactory;
     private boolean             transacted = false;
     private Connection          connection = null;
-    private String              key,clientId;
+    private String              key;
     private boolean             debug      = false;
 
-    public JMSConnectionHolder(String connectionFactory, String clientId, boolean transacted)
-    {
+    public JMSConnectionHolder(String connectionFactory, boolean transacted) {
         this.connectionFactory = connectionFactory;
         this.transacted = transacted;
         this.key = connectionFactory + "#" + transacted;
-        this.clientId = clientId;
+        
     }
 
     /**
@@ -61,7 +60,7 @@ public class JMSConnectionHolder implements ExceptionListener
      * @exception Exception
      *            if error occurs
      */
-    public Connection getConnection(JNDIHelper initialContext) throws Exception
+    public Connection getConnection(JNDIHelper initialContext, String clientId) throws Exception
     {
         if (debug) {
             logger.debug("BEGIN getConnection: factory: " + key);
