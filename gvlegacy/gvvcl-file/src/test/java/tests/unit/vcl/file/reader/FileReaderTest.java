@@ -23,6 +23,8 @@ import junit.framework.TestCase;
 
 import java.io.File;
 
+import org.w3c.dom.Document;
+
 import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Node;
 
@@ -129,7 +131,7 @@ public class FileReaderTest extends TestCase {
 		GVBuffer gvBuffer = new GVBuffer("TEST", "FILEREADER-CALL");
 		fr.perform(gvBuffer);
 		
-		assertEquals(gvBuffer.getObject().toString(),content);
+		assertEquals("ciao", Document.class.cast(gvBuffer.getObject()).getDocumentElement().getTextContent());
 		
 		assertTrue("Resource " + TEST_FILE_READER_XML + " not found in " + TEST_FILE_DEST_RESOURCES, new File(
                 TEST_FILE_DEST_RESOURCES + File.separator + TEST_FILE_READER_XML).exists());

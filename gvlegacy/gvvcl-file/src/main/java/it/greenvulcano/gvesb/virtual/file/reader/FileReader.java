@@ -22,28 +22,19 @@ package it.greenvulcano.gvesb.virtual.file.reader;
 import it.greenvulcano.configuration.XMLConfig;
 import it.greenvulcano.configuration.XMLConfigException;
 import it.greenvulcano.gvesb.buffer.GVBuffer;
-import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
 import it.greenvulcano.gvesb.virtual.CallException;
 import it.greenvulcano.gvesb.virtual.CallOperation;
 import it.greenvulcano.gvesb.virtual.ConnectionException;
 import it.greenvulcano.gvesb.virtual.InitializationException;
 import it.greenvulcano.gvesb.virtual.InvalidDataException;
 import it.greenvulcano.gvesb.virtual.OperationKey;
-import it.greenvulcano.util.bin.BinaryUtils;
 import it.greenvulcano.util.metadata.PropertiesHandler;
 import it.greenvulcano.util.xml.XMLUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Map;
-
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
-
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMXMLBuilderFactory;
-import org.apache.axiom.om.OMXMLParserWrapper;
-//import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,10 +92,6 @@ public class FileReader implements CallOperation
      */
     private boolean             isNamespaceAware;
 
-	/**
-	 * If true uses AXIOM instead of DOM to parse the file. Default is false.
-	 */
-    private boolean             useAXIOM;
 
     /**
      * Invoked from <code>OperationFactory</code> when an <code>Operation</code>
@@ -124,8 +111,7 @@ public class FileReader implements CallOperation
             name = XMLConfig.get(node, "@name");
             srcPath = XMLConfig.get(node, "@srcPath");
             filename = XMLConfig.get(node, "@fileName");
-            asXML = XMLConfig.getBoolean(node, "xml-processor/@as-xml", false);
-            useAXIOM = XMLConfig.getBoolean(node, "xml-processor/@use-axiom", false);
+            asXML = XMLConfig.getBoolean(node, "xml-processor/@as-xml", false);           
             isValidating = XMLConfig.getBoolean(node, "xml-processor/@validating", false);
             isNamespaceAware = XMLConfig.getBoolean(node, "xml-processor/@namespace-aware", false);
 
@@ -159,44 +145,25 @@ public class FileReader implements CallOperation
     public GVBuffer perform(GVBuffer gvBuffer) throws ConnectionException, CallException, InvalidDataException
     {
         try {
-            File srcFile = buildSourcePath(gvBuffer);
+            Path sourceFile = Objects.isNull(filename) ? Paths.get(PropertiesHandler.expand(srcPath, gvBuffer)) 
+            		                                   : Paths.get(PropertiesHandler.expand(srcPath, gvBuffer) , PropertiesHandler.expand(filename, gvBuffer));
 
-            if (!srcFile.exists()) {
-                throw new IllegalArgumentException("Source file " + srcFile.getAbsolutePath()
+            if (!Files.exists(sourceFile)) {
+                throw new IllegalArgumentException("Source file " + sourceFile.toAbsolutePath()
                         + " does not exist on local filesystem");
             }
 
-            if (!srcFile.isFile()) {
-                throw new IllegalArgumentException("Source file " + srcFile.getAbsolutePath() + " is not a normal file");
+            if (!Files.isRegularFile(sourceFile)) {
+                throw new IllegalArgumentException("Source file " + sourceFile.toAbsolutePath() + " is not a normal file");
             }
             
+            byte[] fileContent = Files.readAllBytes(sourceFile);
             if (asXML) {
-                logger.debug("Preparing to read from source file as XML: " + srcFile.getAbsolutePath());
-                FileInputStream stream = new FileInputStream(srcFile);
-                if (useAXIOM) {
-                    // create the parser
-                    //final XMLInputFactory xmlif = StAXUtils.getXMLInputFactory();
-                	XMLInputFactory xmlif = XMLInputFactory.newFactory();
-                    xmlif.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.TRUE);
-                    xmlif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-                    xmlif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, isNamespaceAware);
-                    xmlif.setProperty(XMLInputFactory.IS_VALIDATING, isValidating);
-                    XMLStreamReader streamReader = xmlif.createXMLStreamReader(stream);
-                    
-                    //StAXOMBuilder builder = new StAXOMBuilder(OMAbstractFactory.getOMFactory(), streamReader);
-                    OMXMLParserWrapper builder = OMXMLBuilderFactory.createStAXOMBuilder(OMAbstractFactory.getOMFactory(), streamReader);
-                    // get the root element
-                    System.out.println("!!!!!!!!!!!!!!!!! builder: " + builder); //TODO
-                    gvBuffer.setObject(builder.getDocumentElement());
-                }
-                else {
-                    Document dom = XMLUtils.parseDOM_S(stream, isValidating, isNamespaceAware);
-                    gvBuffer.setObject(dom);
-                }
-            }
-            else {
-                logger.debug("Preparing to read from source file: " + srcFile.getAbsolutePath());
-                byte[] fileContent = BinaryUtils.readFileAsBytes(srcFile);
+                logger.debug("Reading source file as XML: " + sourceFile.toAbsolutePath());        
+                Document dom = XMLUtils.parseDOM_S(fileContent, isValidating, isNamespaceAware);
+                gvBuffer.setObject(dom);
+            } else {
+                logger.debug("Reading source file: " + sourceFile.toAbsolutePath());               
                 gvBuffer.setObject(fileContent);
             }
 
@@ -276,47 +243,5 @@ public class FileReader implements CallOperation
         return gvBuffer.getService();
     }
 
-    private File buildSourcePath(GVBuffer gvBuffer) throws Exception
-    {
-        try {
-            PropertiesHandler.enableExceptionOnErrors();
-            Map<String, Object> params = GVBufferPropertiesHelper.getPropertiesMapSO(gvBuffer, true);
-
-            String srcDirectory = gvBuffer.getProperty("GVFR_DIRECTORY");
-            if (srcDirectory == null) {
-                if (srcPath != null) {
-                    srcDirectory = srcPath;
-                }
-                else {
-                    throw new IllegalArgumentException("Source parent directory pathname NOT available");
-                }
-            }
-
-            srcDirectory = PropertiesHandler.expand(srcDirectory, params, gvBuffer);
-
-            String srcFilename = gvBuffer.getProperty("GVFR_FILE_NAME");
-            if (srcFilename == null) {
-                if (filename != null) {
-                    srcFilename = filename;
-                }
-                else {
-                    throw new IllegalArgumentException("Source file name NOT available");
-                }
-            }
-
-            srcFilename = PropertiesHandler.expand(srcFilename, params, gvBuffer);
-
-            File srcPathname = "".equals(srcDirectory) ? new File(srcFilename) : new File(srcDirectory, srcFilename);
-            if (srcPathname.isAbsolute()) {
-                if (srcPathname.isFile()) {
-                    return srcPathname;
-                }
-                throw new IllegalArgumentException("Source file " + srcPathname.getPath() + " is not a file");
-            }
-            throw new IllegalArgumentException("Source file path " + srcPathname.getPath() + " is not absolute");
-        }
-        finally {
-            PropertiesHandler.disableExceptionOnErrors();
-        }
-    }
+   
 }

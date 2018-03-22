@@ -148,14 +148,11 @@ public class GVSearch implements GVFileCommand {
                       
            
             gvBuffer.setProperty(GVFM_FOUND_FILES_NUM, String.valueOf(results.size()));
-            
-           
-            if (results.size() > 0) {                
-                gvBuffer.setProperty(GVFM_FOUND_FILES_LIST, results.stream().collect(Collectors.joining(";")));
-            }
-            
+                        
             if (returnCollection) {
             	gvBuffer.setObject(results);
+            } else if (results.size() > 0) {                
+                gvBuffer.setProperty(GVFM_FOUND_FILES_LIST, results.stream().collect(Collectors.joining(";")));
             }
         }  catch (Exception exc) {
             throw new CallException("GV_CALL_SERVICE_ERROR", new String[][]{{"service", gvBuffer.getService()},
