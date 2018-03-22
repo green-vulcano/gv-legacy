@@ -25,6 +25,9 @@ import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
 import it.greenvulcano.util.file.FileManager;
 import it.greenvulcano.util.metadata.PropertiesHandler;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -131,12 +134,12 @@ public class GVMove implements GVFileCommand
             String currSourcePath = PropertiesHandler.expand(sourcePath, params, gvBuffer);
             String currTargetPath = PropertiesHandler.expand(targetPath, params, gvBuffer);
             String currFile = PropertiesHandler.expand(filePattern, params, gvBuffer);
-
-            FileManager.mv(currSourcePath, currTargetPath, currFile);
+           
             if (filePattern.equals("")) {
+                Files.move(Paths.get(currSourcePath), Paths.get(currTargetPath), StandardCopyOption.ATOMIC_MOVE);
                 logger.debug("Directory/file " + currSourcePath + " successfully moved to directory " + currTargetPath);
-            }
-            else {
+            } else {
+            	FileManager.mv(currSourcePath, currTargetPath, currFile);
                 logger.debug("Files '" + currFile + "' successfully moved from directory " + currSourcePath
                         + " to directory " + currTargetPath);
             }

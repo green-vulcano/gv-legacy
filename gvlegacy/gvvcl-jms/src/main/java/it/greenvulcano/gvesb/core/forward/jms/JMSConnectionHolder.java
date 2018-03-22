@@ -70,11 +70,13 @@ public class JMSConnectionHolder implements ExceptionListener
                 synchronized (this) {
                     if (connection == null) {
                         connection = createConnection(initialContext, connectionFactory, transacted, debug);
-                        try {
-                        	connection.setClientID(clientId);
-                        } catch (Exception e) {
-                        	logger.error("EXCEPTION on connection.setClientID: factory: " + key, e);
-						}
+                        if (clientId!=null) {
+                        	try {                        	
+                            	connection.setClientID(clientId);
+                            } catch (Exception e) {
+                            	logger.error("EXCEPTION on connection.setClientID: factory: " + key, e);
+    						}
+                    	}                        
                         connection.setExceptionListener(this);
                         
                     }

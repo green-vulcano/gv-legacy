@@ -135,7 +135,7 @@ public class GVSearch implements GVFileCommand {
             if (recursive) {
             	
             	results= Files.walk(Paths.get(currSourcePath))					        	     
-    					     .filter(p -> p.getFileName().toString().matches(Optional.ofNullable(currFile).orElse(".*")))
+    					     .filter(p -> p.toAbsolutePath().toString().matches(Optional.ofNullable(currFile).orElse(".*")))
     					     .map(p -> returnFullPath? p.toAbsolutePath().toString():p.getFileName().toString())    					     
     					     .collect(Collectors.toSet());
             	

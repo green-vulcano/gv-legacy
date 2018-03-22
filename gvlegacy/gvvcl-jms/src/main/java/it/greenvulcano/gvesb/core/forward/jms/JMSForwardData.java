@@ -178,19 +178,23 @@ public class JMSForwardData
 
             clientId = XMLConfig.get(fdNode, "@clientId");
             
-            connectionHolder = new JMSConnectionHolder(connectionFactory, transacted);
-            connectionHolder.setDebug(debug);
-
-            initialSize = XMLConfig.getInteger(fdNode, "@initial-size", DEFAULT_INITIAL_SIZE);
-            maximumSize = XMLConfig.getInteger(fdNode, "@maximum-size", DEFAULT_MAXIMUM_SIZE);
-            if (initialSize < 0) {
-                throw new IllegalArgumentException("initialSize < 0, forwardName=" + forwardName);
-            }
-            if ((maximumSize > 0) && (initialSize > maximumSize)) {
-                throw new IllegalArgumentException("initialSize(" + initialSize + ") > maximumSize(" + maximumSize
-                        + "), forwardName=" + forwardName);
+            if (clientId!=null) {
+            	initialSize=1;
+            	maximumSize=1;
+            } else {
+            	initialSize = XMLConfig.getInteger(fdNode, "@initial-size", DEFAULT_INITIAL_SIZE);
+                maximumSize = XMLConfig.getInteger(fdNode, "@maximum-size", DEFAULT_MAXIMUM_SIZE);
+                if (initialSize < 0) {
+                    throw new IllegalArgumentException("initialSize < 0, forwardName=" + forwardName);
+                }
+                if ((maximumSize > 0) && (initialSize > maximumSize)) {
+                    throw new IllegalArgumentException("initialSize(" + initialSize + ") > maximumSize(" + maximumSize
+                            + "), forwardName=" + forwardName);
+                }
             }
             
+            connectionHolder = new JMSConnectionHolder(connectionFactory, transacted);
+            connectionHolder.setDebug(debug);          
            
 
             String destinationType = XMLConfig.get(fdNode, "@destination-type", "queue");
