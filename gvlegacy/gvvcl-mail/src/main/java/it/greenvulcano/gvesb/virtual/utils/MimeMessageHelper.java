@@ -22,14 +22,22 @@ package it.greenvulcano.gvesb.virtual.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javax.activation.DataHandler;
+import javax.mail.Address;
 import javax.mail.BodyPart;
 import javax.mail.Message;
+import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Part;
@@ -71,6 +79,55 @@ public class MimeMessageHelper {
 		return decode(Base64.decodeBase64(message));
 	}
 	
+	public static Map<String, List<String>> getMessageRecipients(byte[] mimeMessage) throws MessagingException {
+		return getMessageRecipients(decode(mimeMessage));
+	}
+	
+	public static Map<String, List<String>> getMessageRecipients(String mimeMessage) throws MessagingException {
+		return getMessageRecipients(decode(mimeMessage));
+	}	
+	
+	public static Map<String, List<String>> getMessageRecipients(MimeMessage mimeMessage) throws MessagingException {
+		
+		
+		Map<String, List<String>> recipients = new LinkedHashMap<>();
+		
+		Optional.ofNullable(mimeMessage.getRecipients(RecipientType.TO))
+		        .ifPresent(a -> recipients.put("TO", Stream.of(a).map(Address::toString).collect(Collectors.toList())));
+		
+		Optional.ofNullable(mimeMessage.getRecipients(RecipientType.CC))
+        .ifPresent(a -> recipients.put("CC", Stream.of(a).map(Address::toString).collect(Collectors.toList())));
+		
+		Optional.ofNullable(mimeMessage.getRecipients(RecipientType.BCC))
+        .ifPresent(a -> recipients.put("BCC", Stream.of(a).map(Address::toString).collect(Collectors.toList())));
+		
+		return recipients;
+		
+	}
+	
+	
+	public static Body getMessageBody(MimeMessage message) {
+		try {
+			
+			Multipart multipartMessage = (Multipart) message.getContent();
+			
+			for (int i = 0; i< multipartMessage.getCount(); i++ ) {
+				BodyPart bodyPart = multipartMessage.getBodyPart(i);
+				
+				if (bodyPart.getDisposition() != null && bodyPart.getDisposition().equalsIgnoreCase(Part.INLINE)) {					
+					
+					return new Body(bodyPart.getContentType(), bodyPart.getContent().toString());
+									
+				}
+			}
+			
+		} catch (Exception e) {
+			// do nothing
+		}
+		
+		return null;
+	}
+		
 	public static List<Attachment> getMessageAttachments(String message) {
 		try {
 			return getMessageAttachments(decode(message));
@@ -240,12 +297,62 @@ public class MimeMessageHelper {
 		return encodedEmail;
 	}
 	
+	public static class Body {
+		private final String contentType, content;
+
+		public Body(String contentType, String content) {			
+			this.contentType = contentType;
+			this.content = content;
+		}
+
+		public String getContentType() {
+			return contentType;
+		}
+
+		public String getContent() {
+			return content;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((content == null) ? 0 : content.hashCode());
+			result = prime * result + ((contentType == null) ? 0 : contentType.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Body other = (Body) obj;
+			if (content == null) {
+				if (other.content != null)
+					return false;
+			} else if (!content.equals(other.content))
+				return false;
+			if (contentType == null) {
+				if (other.contentType != null)
+					return false;
+			} else if (!contentType.equals(other.contentType))
+				return false;
+			return true;
+		}
+		
+		
+		
+	}
+	
 	public static class Attachment {
 		
 		private final String contentType, fileName, content;
 
-		public Attachment(String contentType, String fileName, String content) {
-			super();
+		public Attachment(String contentType, String fileName, String content) {			
 			this.contentType = contentType;
 			this.fileName = fileName;
 			this.content = content;

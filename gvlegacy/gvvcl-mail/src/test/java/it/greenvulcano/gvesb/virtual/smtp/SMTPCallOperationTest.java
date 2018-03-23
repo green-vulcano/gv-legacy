@@ -100,6 +100,9 @@ public class SMTPCallOperationTest extends TestCase {
     	assertEquals(2, attachments.size());
     	
     	assertEquals(attachemnt2, attachments.stream().filter(a -> a.getFileName().equals("test2.txt")).map(a->a.getContent()).findFirst().get());
+    	    	    	
+    	assertEquals("hr@greenvulcano.com", MimeMessageHelper.getMessageRecipients(mimeMessage).get("TO").get(0));
+    	assertEquals("Hello MimeMessageHelper", MimeMessageHelper.getMessageBody(mimeMessage).getContent());
     	
     }
 	
