@@ -104,6 +104,12 @@ public class SMTPCallOperationTest extends TestCase {
     	assertEquals("hr@greenvulcano.com", MimeMessageHelper.getMessageRecipients(mimeMessage).get("TO").get(0));
     	assertEquals("Hello MimeMessageHelper", MimeMessageHelper.getMessageBody(mimeMessage).getContent());
     	
+    	email = MimeMessageHelper.createEmailMessage(from, to)
+                .setTextBody(message)               
+                .getEncodedMimeMessage();
+    	
+    	assertEquals("Hello MimeMessageHelper", MimeMessageHelper.getMessageBody(mimeMessage).getContent());
+    	
     }
 	
 	/**

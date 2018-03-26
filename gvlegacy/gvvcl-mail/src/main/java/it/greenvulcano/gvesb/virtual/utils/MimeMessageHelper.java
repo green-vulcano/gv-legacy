@@ -109,16 +109,22 @@ public class MimeMessageHelper {
 	public static Body getMessageBody(MimeMessage message) {
 		try {
 			
-			Multipart multipartMessage = (Multipart) message.getContent();
+			if (message.getContent() instanceof Multipart) {
 			
-			for (int i = 0; i< multipartMessage.getCount(); i++ ) {
-				BodyPart bodyPart = multipartMessage.getBodyPart(i);
+			
+				Multipart multipartMessage = (Multipart) message.getContent();
 				
-				if (bodyPart.getDisposition() != null && bodyPart.getDisposition().equalsIgnoreCase(Part.INLINE)) {					
+				for (int i = 0; i< multipartMessage.getCount(); i++ ) {
+					BodyPart bodyPart = multipartMessage.getBodyPart(i);
 					
-					return new Body(bodyPart.getContentType(), bodyPart.getContent().toString());
-									
+					if (bodyPart.getDisposition() != null && bodyPart.getDisposition().equalsIgnoreCase(Part.INLINE)) {					
+						
+						return new Body(bodyPart.getContentType(), bodyPart.getContent().toString());
+										
+					}
 				}
+			} else {
+				return new Body(message.getContentType(), message.getContent().toString());
 			}
 			
 		} catch (Exception e) {
