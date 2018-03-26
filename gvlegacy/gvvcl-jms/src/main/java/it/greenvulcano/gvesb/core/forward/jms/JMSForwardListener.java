@@ -574,6 +574,28 @@ public class JMSForwardListener implements Runnable
                 gvBuffer = new GVBuffer(flowSystem, flowService);
 
                 JMSMessageDecorator.decorateGVBuffer(msg, gvBuffer);
+                
+                try {
+                	gvBuffer.setProperty("JMS_DESTINATION", msg.getJMSDestination().toString());
+                } catch (Exception e) {
+                	gvBuffer.setProperty("JMS_DESTINATION", "UNAVAILABLE");
+				}
+                try {
+                	gvBuffer.setProperty("JMS_REPLY_TO", msg.getJMSReplyTo().toString());
+                } catch (Exception e) {
+                	//do nothing
+				}
+                try {
+                	gvBuffer.setProperty("JMS_CORRELATION_ID", msg.getJMSCorrelationID());
+                } catch (Exception e) {
+                	//do nothing
+				}
+                try {
+                	gvBuffer.setProperty("JMS_MESSAGE_ID", msg.getJMSMessageID());
+                } catch (Exception e) {
+                	gvBuffer.setProperty("JMS_MESSAGE_ID", "UNAVAILABLE");
+				}
+                             
                 gvBuffer.setObject(msg);
 
                 String refDP = data.getRefDP();
