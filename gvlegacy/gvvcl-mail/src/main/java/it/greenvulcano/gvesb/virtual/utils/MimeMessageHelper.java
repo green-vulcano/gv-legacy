@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -34,7 +35,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.activation.DataHandler;
-import javax.mail.Address;
 import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
@@ -93,13 +93,13 @@ public class MimeMessageHelper {
 		Map<String, List<String>> recipients = new LinkedHashMap<>();
 		
 		Optional.ofNullable(mimeMessage.getRecipients(RecipientType.TO))
-		        .ifPresent(a -> recipients.put("TO", Stream.of(a).map(Address::toString).collect(Collectors.toList())));
+		        .ifPresent(a -> recipients.put("TO", Stream.of(a).map(InternetAddress.class::cast).map(InternetAddress::getAddress).collect(Collectors.toList())));
 		
 		Optional.ofNullable(mimeMessage.getRecipients(RecipientType.CC))
-        .ifPresent(a -> recipients.put("CC", Stream.of(a).map(Address::toString).collect(Collectors.toList())));
+        .ifPresent(a -> recipients.put("CC", Stream.of(a).map(InternetAddress.class::cast).map(InternetAddress::getAddress).collect(Collectors.toList())));
 		
 		Optional.ofNullable(mimeMessage.getRecipients(RecipientType.BCC))
-        .ifPresent(a -> recipients.put("BCC", Stream.of(a).map(Address::toString).collect(Collectors.toList())));
+        .ifPresent(a -> recipients.put("BCC", Stream.of(a).map(InternetAddress.class::cast).map(InternetAddress::getAddress).collect(Collectors.toList())));
 		
 		return recipients;
 		
@@ -117,13 +117,14 @@ public class MimeMessageHelper {
 				for (int i = 0; i< multipartMessage.getCount(); i++ ) {
 					BodyPart bodyPart = multipartMessage.getBodyPart(i);
 					
-					if (bodyPart.getDisposition() != null && bodyPart.getDisposition().equalsIgnoreCase(Part.INLINE)) {					
+					if (Part.INLINE.equalsIgnoreCase(bodyPart.getDisposition()) || ( Objects.isNull(bodyPart.getDisposition()) && bodyPart.isMimeType("text/plain"))) {					
 						
 						return new Body(bodyPart.getContentType(), bodyPart.getContent().toString());
 										
 					}
 				}
 			} else {
+				
 				return new Body(message.getContentType(), message.getContent().toString());
 			}
 			
