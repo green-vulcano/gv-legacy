@@ -57,6 +57,7 @@ public class GVSecurityFilter implements Filter {
 			
 			servletResponse.addHeader("Access-Control-Allow-Origin", Optional.ofNullable(servletRequest.getHeader("Origin")).orElse("*"));
 			servletResponse.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT");
+			servletResponse.addHeader("Access-Control-Allow-Headers", Optional.ofNullable(servletRequest.getHeader("Access-Control-Request-Headers")).orElse("Content-Type"));
 			servletResponse.addHeader("Access-Control-Max-Age", "86400");
 			
 			servletResponse.addHeader("Content-Length", "0");
@@ -67,7 +68,7 @@ public class GVSecurityFilter implements Filter {
 		} else {
 			servletResponse.addHeader("Access-Control-Allow-Origin","*");
 			servletResponse.addHeader("Access-Control-Allow-Credentials", "true");
-			servletResponse.addHeader("Access-Control-Expose-Headers", "Content-type, Content-Range, X-Auth-Status");
+			servletResponse.addHeader("Access-Control-Expose-Headers", "Content-Type, Content-Range, X-Auth-Status");
 		}	
 		
 		String authorization = Optional.ofNullable(servletRequest.getHeader("Authorization")).orElse("");
