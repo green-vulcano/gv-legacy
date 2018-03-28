@@ -105,8 +105,11 @@ public class MimeMessageHelper {
 		
 	}
 	
-	
 	public static Body getMessageBody(MimeMessage message) {
+		return getMessageBody(message, "text/plain");
+	}
+	
+	public static Body getMessageBody(MimeMessage message, String mimeType) {
 		try {
 			
 			if (message.getContent() instanceof Multipart) {
@@ -117,7 +120,7 @@ public class MimeMessageHelper {
 				for (int i = 0; i< multipartMessage.getCount(); i++ ) {
 					BodyPart bodyPart = multipartMessage.getBodyPart(i);
 					
-					if (Part.INLINE.equalsIgnoreCase(bodyPart.getDisposition()) || ( Objects.isNull(bodyPart.getDisposition()) && bodyPart.isMimeType("text/plain"))) {					
+					if (bodyPart.isMimeType(mimeType) && (Part.INLINE.equalsIgnoreCase(bodyPart.getDisposition()) || Objects.isNull(bodyPart.getDisposition()))) {					
 						
 						return new Body(bodyPart.getContentType(), bodyPart.getContent().toString());
 										
