@@ -236,6 +236,10 @@ public class HttpInboundGateway extends HttpServlet
             mapping = "/";
         }
         String gvAction = mapping;
+        
+        resp.addHeader("Access-Control-Allow-Origin","*");
+        resp.addHeader("Access-Control-Allow-Credentials", "true");
+        resp.addHeader("Access-Control-Expose-Headers", "Content-type, Content-Range, X-Auth-Status");
 
         try {
             req = new MultiReadHttpServletRequest(req);
