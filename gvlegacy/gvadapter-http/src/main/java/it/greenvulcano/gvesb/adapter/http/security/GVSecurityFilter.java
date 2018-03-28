@@ -2,6 +2,7 @@ package it.greenvulcano.gvesb.adapter.http.security;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -50,6 +51,24 @@ public class GVSecurityFilter implements Filter {
 				
 		HttpServletRequest servletRequest = HttpServletRequest.class.cast(request);
 		HttpServletResponse servletResponse =  HttpServletResponse.class.cast(response);
+		
+		if (servletRequest.getMethod().equalsIgnoreCase("OPTIONS") && 
+			Objects.nonNull(servletRequest.getHeader("Access-Control-Request-Method"))){
+			
+			servletResponse.addHeader("Access-Control-Allow-Origin", Optional.ofNullable(servletRequest.getHeader("Origin")).orElse("*"));
+			servletResponse.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT");
+			servletResponse.addHeader("Access-Control-Max-Age", "86400");
+			
+			servletResponse.addHeader("Content-Length", "0");
+			servletResponse.addHeader("Connection", "keep-alive");
+			servletResponse.setStatus(HttpServletResponse.SC_OK);
+			return;
+			
+		} else {
+			servletResponse.addHeader("Access-Control-Allow-Origin","*");
+			servletResponse.addHeader("Access-Control-Allow-Credentials", "true");
+			servletResponse.addHeader("Access-Control-Expose-Headers", "Content-type, Content-Range, X-Auth-Status");
+		}	
 		
 		String authorization = Optional.ofNullable(servletRequest.getHeader("Authorization")).orElse("");
 		if (securityModulesReferences!=null) {				

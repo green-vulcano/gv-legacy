@@ -32,6 +32,7 @@ import it.greenvulcano.gvesb.log.GVFormatLog;
 import it.greenvulcano.log.NMDC;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.servlet.ServletConfig;
@@ -189,9 +190,12 @@ public class HttpInboundGateway extends HttpServlet
      *         if any error occurs.
      */
     @Override
-    public void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException
-    {
-        perform("OPTIONS", req, resp);
+    public void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException {
+    	
+    	if (Objects.isNull(req.getHeader("Access-Control-Request-Method"))){
+    		perform("OPTIONS", req, resp);    		
+    	}
+        
     }
 
     /**
@@ -236,10 +240,6 @@ public class HttpInboundGateway extends HttpServlet
             mapping = "/";
         }
         String gvAction = mapping;
-        
-        resp.addHeader("Access-Control-Allow-Origin","*");
-        resp.addHeader("Access-Control-Allow-Credentials", "true");
-        resp.addHeader("Access-Control-Expose-Headers", "Content-type, Content-Range, X-Auth-Status");
 
         try {
             req = new MultiReadHttpServletRequest(req);
