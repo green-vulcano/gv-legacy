@@ -22,7 +22,6 @@ package it.greenvulcano.gvesb.virtual.j2ee;
 import it.greenvulcano.configuration.XMLConfig;
 import it.greenvulcano.configuration.XMLConfigException;
 import it.greenvulcano.gvesb.buffer.GVBuffer;
-import it.greenvulcano.gvesb.buffer.Id;
 import it.greenvulcano.gvesb.gvdp.DataProviderException;
 import it.greenvulcano.gvesb.gvdp.DataProviderManager;
 import it.greenvulcano.gvesb.gvdp.IDataProvider;
@@ -34,6 +33,8 @@ import it.greenvulcano.gvesb.virtual.InitializationException;
 import it.greenvulcano.gvesb.virtual.InvalidDataException;
 import it.greenvulcano.gvesb.virtual.VCLException;
 import it.greenvulcano.util.metadata.PropertiesHandler;
+
+import java.util.Optional;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
@@ -97,6 +98,8 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
      */
     private boolean             decorateMessage = true; 
 
+    private String messageId, correlationId, replyTo;    
+    
     /**
      * @see it.greenvulcano.gvesb.virtual.j2ee.J2EEOperation#j2eeInit(org.w3c.dom.Node)
      */
@@ -181,6 +184,11 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
         dumpMessage = XMLConfig.getBoolean(node, "@dump-message", false);
         decorateMessage = XMLConfig.getBoolean(node, "@decorate-message", true);
         logger.debug("Decorate Message.......: " + decorateMessage);
+        
+        messageId = XMLConfig.get(node, "@messageId");
+        correlationId = XMLConfig.get(node, "@correlationId");
+        replyTo = XMLConfig.get(node, "@replyTo");
+        
     }
 
     /**
@@ -273,7 +281,19 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                 	JMSMessageDecorator.decorateMessage(message, gvBuffer);
                 }
                 String destination = PropertiesHandler.expand(destinationName, gvBuffer);
-                sendOrPublish(message, gvBuffer.getId(), destination);
+                              
+                
+                if (messageId!=null) {
+                	message.setJMSMessageID(PropertiesHandler.expand(replyTo, gvBuffer));
+                }
+                
+                String actualCorrelationId = PropertiesHandler.expand(Optional.ofNullable(correlationId)
+                		                                                      .orElse(gvBuffer.getId().toString()),
+                		                                                      gvBuffer);
+               
+                String actualReplyTo = replyTo!=null? PropertiesHandler.expand(replyTo, gvBuffer):null;
+                
+                sendOrPublish(message, actualCorrelationId, destination, actualReplyTo);
             }
             catch (InvalidDataException exc) {
                 throw exc;
@@ -317,11 +337,13 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
     }
 
 
-    private void sendOrPublish(Message message, Id id, String destination) throws J2EEConnectionException, J2EEEnqueueException,
+    private void sendOrPublish(Message message, String correlationId, String destination, String replyTo) throws J2EEConnectionException, J2EEEnqueueException,
             InvalidDataException, JMSException
     {
-        message.setJMSCorrelationID(id.toString());
-
+            	  	
+    	
+    	message.setJMSCorrelationID(correlationId);
+        
         MessageProducer messageProducer = null;
 
         boolean mustEnlist = false;
@@ -345,6 +367,10 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                 else {
                     messageProducer = ((QueueSession) session).createSender(lQueue);
                 }
+                
+                if (replyTo != null) {
+                	message.setJMSReplyTo(session.createQueue(replyTo));
+                }
 
                 messageProducer.send(message, deliveryMode, priority, ttl);
                 if (dumpMessage && logger.isDebugEnabled()) {
@@ -359,6 +385,10 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                 }
                 else {
                     messageProducer = ((TopicSession) session).createPublisher(lTopic);
+                }
+                
+                if (replyTo != null) {
+                	message.setJMSReplyTo(session.createTopic(replyTo));
                 }
 
                 messageProducer.send(message, deliveryMode, priority, ttl);
