@@ -25,6 +25,7 @@ import it.greenvulcano.gvesb.internal.data.GVBufferPropertiesHelper;
 import it.greenvulcano.util.metadata.PropertiesHandler;
 import it.greenvulcano.util.zip.ZipHelper;
 
+import java.nio.file.Paths;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -141,6 +142,8 @@ public class GVZip implements GVFileCommand
             String currZipFileName = PropertiesHandler.expand(zipFileName, params, gvBuffer);
 
             zipHelper.zipFile(currSourcePath, currFilePattern, currTargetPath, currZipFileName);
+            
+            gvBuffer.setObject(Paths.get(currTargetPath, currZipFileName).toString());
             logger.debug("File " + currFilePattern + " in directory " + currSourcePath + " successfully zipped to "
                     + currZipFileName + " in directory " + currTargetPath);
         }
