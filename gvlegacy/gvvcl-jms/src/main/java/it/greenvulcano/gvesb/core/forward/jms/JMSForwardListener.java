@@ -53,6 +53,8 @@ import javax.jms.Topic;
 import javax.jms.XAQueueConnection;
 import javax.jms.XAQueueSession;
 import javax.jms.XASession;
+import javax.jms.XATopicConnection;
+import javax.jms.XATopicSession;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
@@ -93,8 +95,8 @@ public class JMSForwardListener implements Runnable
      */
     private String              serverName      = "";
 
-    //private Connection          connection       = null;
     private Session             session         = null;
+    private int acknowledgement = Session.AUTO_ACKNOWLEDGE;
     private MessageConsumer     messageConsumer = null;
     private Destination         destination     = null;
     private XAHelper            xaHelper        = null;
@@ -130,7 +132,13 @@ public class JMSForwardListener implements Runnable
             name = data.getName();
             forwardName = data.getForwardName();
             serverName = data.getServerName();
-
+            
+            if (data.getAcknowledgementMode().equals("CLIENT")) {
+            	acknowledgement = Session.CLIENT_ACKNOWLEDGE;
+            } else if (data.getAcknowledgementMode().equals("DUPS_OK")) {
+            	acknowledgement = Session.DUPS_OK_ACKNOWLEDGE;
+            }
+            
             NMDC.setServer(serverName);
 
             createErrorHandlerManager(data.getCfgNode());
@@ -408,7 +416,7 @@ public class JMSForwardListener implements Runnable
                     logger.debug("Using message selector: [" + localSelector + "]");
                 } 
             }
-
+            
             if (data.isQueue()) {
             	
             	 if (data.isTransacted() && (connection instanceof XAQueueConnection)) {
@@ -416,15 +424,24 @@ public class JMSForwardListener implements Runnable
                      destination = session.createQueue(data.getDestinationName());
                      messageConsumer = ((XAQueueSession) session).createConsumer(destination, localSelector);
                  } else {
-                     session = ((QueueConnection) connection).createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
+                     session = ((QueueConnection) connection).createQueueSession(true, acknowledgement);
                      destination = session.createQueue(data.getDestinationName());
                      messageConsumer = ((QueueSession) session).createReceiver((Queue) destination, localSelector);
                  }                                   
 
             } else {
-            	 session = connection.createSession(data.isTransacted(), Session.AUTO_ACKNOWLEDGE);
-            	 destination = session.createTopic(data.getDestinationName()); 
-            	 messageConsumer = session.createDurableSubscriber((Topic) destination, data.getName(), localSelector, false);
+            	
+            	
+            	 if (data.isTransacted() && (connection instanceof XATopicSession)) {
+                     session = ((XATopicConnection) connection).createXATopicSession();
+                     destination = session.createTopic(data.getDestinationName());
+                     messageConsumer = ((XATopicSession) session).createDurableSubscriber((Topic) destination, localSelector);
+                 } else {
+                	 session = connection.createSession(data.isTransacted(), acknowledgement);
+                	 destination = session.createTopic(data.getDestinationName()); 
+                	 messageConsumer = session.createDurableSubscriber((Topic) destination, data.getName(), localSelector, false);
+                 }   	
+            	 
             	
             }
             connection.start();
@@ -432,6 +449,10 @@ public class JMSForwardListener implements Runnable
             connected = true;
             if (data.isDebug()) {
                 logger.debug("Connected Forward [" + name + "/" + forwardName + "] instance");
+            }
+            
+            if (acknowledgement==Session.CLIENT_ACKNOWLEDGE) {
+            	session.recover();
             }
         }
         finally {
@@ -595,6 +616,12 @@ public class JMSForwardListener implements Runnable
                 } catch (Exception e) {
                 	gvBuffer.setProperty("JMS_MESSAGE_ID", "UNAVAILABLE");
 				}
+                
+                try {
+                	gvBuffer.setProperty("JMS_REDELIVERED", Boolean.toString(msg.getJMSRedelivered()));
+                } catch (Exception e) {
+                	gvBuffer.setProperty("JMS_REDELIVERED", "false");
+				}
                              
                 gvBuffer.setObject(msg);
 
@@ -625,6 +652,11 @@ public class JMSForwardListener implements Runnable
                 logger.debug("Begin Core call");
             }
             execute(gvBuffer, flowSystem, flowService);
+            
+            if (acknowledgement == Session.CLIENT_ACKNOWLEDGE) {
+            	msg.acknowledge();
+            }            
+            
             if (data.isDebug()) {
                 logger.debug("End Core call");
             }

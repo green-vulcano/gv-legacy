@@ -96,7 +96,7 @@ public class JMSForwardData
 
     private JMSConnectionHolder    connectionHolder;
     private String                 connectionFactory;
-    //private Connection             connection         = null;
+   
     private String                 destinationName;
     private String                 messageSelector      = "";
     private long                   reconnectInterval    = -1;
@@ -141,6 +141,9 @@ public class JMSForwardData
     private List<Validator>        validators           = new ArrayList<Validator>();
 
 
+    private String acknowledgementMode;
+    
+    
     /**
      * @param node
      * @throws JMSForwardException
@@ -175,6 +178,8 @@ public class JMSForwardData
             Node fdNode = XMLConfig.getNode(node, "ForwardDeployment");
             connectionFactory = XMLConfig.get(fdNode, "@connection-factory");
             transacted = XMLConfig.getBoolean(fdNode, "@transacted", false);
+            
+            acknowledgementMode = XMLConfig.get(fdNode, "@acknowledgementMode", "AUTO");
 
             clientId = XMLConfig.get(fdNode, "@clientId");
             
@@ -492,7 +497,11 @@ public class JMSForwardData
     }
 
 
-    /**
+    public String getAcknowledgementMode() {
+		return acknowledgementMode;
+	}
+
+	/**
      * @return the transactionTimeout
      */
     public int getTransactionTimeout()
