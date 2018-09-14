@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -311,6 +312,7 @@ public class RESTHttpServletMapping implements HttpServletMapping
             
             if (response.getPropertyNamesSet().contains("HTTP_FORCE_TX_ROLLBACK")) {
             	transInfo.setErrorCode(-1);
+            	manageHttpResponse(response, resp);
             } else {
 	            transactionManager.commit(transInfo, true);	
 	            manageHttpResponse(response, resp);	
@@ -546,21 +548,22 @@ public class RESTHttpServletMapping implements HttpServletMapping
                     resp.setStatus(Integer.parseInt(respStatusCode));
                 }
                 else {
-                	
-                    //resp.sendError(Integer.parseInt(respStatusCode), respStatusMsg);
+                	                    
                     resp.setStatus(Integer.parseInt(respStatusCode), respStatusMsg);
                 }
             }
-
-            /*Map<String, String> headerMap = (Map<String, String>) environment.get(AdapterHttpConstants.ENV_KEY_HTTP_HEADER);
-            if (headerMap != null) {
-                for (Entry<String, String> entry : headerMap.entrySet()) {
-                    String paramName = entry.getKey();
-                    String value = entry.getValue();
-                    resp.setHeader(paramName, value);
-                }
-            }*/
-
+            
+            
+            Stream.of(response.getPropertyNames())
+                   .filter(p->p.startsWith("HTTP_RESP_HEADERS_"))
+                   .forEach(key->{
+                	   
+                	   String headerKey = key.split("HTTP_RESP_HEADERS_")[1];                	   
+                	   
+                	   resp.setHeader(headerKey, response.getProperty(key));
+                	   
+                   });
+           
             Object data = response.getObject();
             if (data != null) {
                 respCharacterEncoding = response.getProperty("HTTP_RESP_CHAR_ENCODING");
