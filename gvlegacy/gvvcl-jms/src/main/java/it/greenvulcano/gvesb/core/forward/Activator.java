@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import it.greenvulcano.configuration.ConfigurationEvent;
 import it.greenvulcano.configuration.ConfigurationListener;
 import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.core.forward.security.JMSMessageIdentityResolver;
 import it.greenvulcano.gvesb.gvdp.DataProviderManager;
 import it.greenvulcano.gvesb.gvdp.impl.JMSBytesMessageDataProvider;
 import it.greenvulcano.gvesb.gvdp.impl.JMSMapMessageDataProvider;
@@ -74,9 +75,16 @@ public class Activator implements BundleActivator {
 		OperationFactory.registerSupplier("jms-enqueue", JMSEnqueueOperation::new);
 		OperationFactory.registerSupplier("jms-dequeue", JMSDequeueOperation::new);
 		
+		JMSMessageIdentityResolver.init(context);
 		JMSForwardManager.init();
 		
-		//jmxObjectName = Optional.ofNullable(JMXEntryPoint.getInstance().registerObject(jmsForwardManager, JMSForwardManager.DESCRIPTOR_NAME));
+		try {
+		
+			jmxObjectName = Optional.ofNullable(JMXEntryPoint.getInstance().registerObject(null, JMSForwardManager.DESCRIPTOR_NAME));
+		} catch (Exception e) {
+			LOG.warn("Registration failed of MBean "+JMSForwardManager.DESCRIPTOR_NAME, e);
+		}
+		
 		
 		XMLConfig.addConfigurationListener(configurationListener, JMSForwardManager.JMS_FORWARD_FILE_NAME);
 		
@@ -96,6 +104,8 @@ public class Activator implements BundleActivator {
 		
 		OperationFactory.unregisterSupplier("jms-enqueue");
 		OperationFactory.unregisterSupplier("jms-dequeue");
+		
+		JMSMessageIdentityResolver.destroy();
 		
 		try {
 			jmxObjectName.ifPresent(JMXEntryPoint.getInstance()::unregisterObject);

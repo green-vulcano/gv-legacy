@@ -38,14 +38,7 @@
 			<version>${gvesb.version}</version>
 			<type>bundle</type>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>it.greenvulcano.gvesb</groupId>
-			<artifactId>gvpolicy</artifactId>
-			<version>${gvesb.version}</version>
-			<type>bundle</type>
-			<scope>provided</scope>
-		</dependency>
+		</dependency>		
 		<dependency>
 			<groupId>it.greenvulcano.gvesb</groupId>
 			<artifactId>gviam</artifactId>

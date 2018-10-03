@@ -26,9 +26,11 @@ import it.greenvulcano.gvesb.buffer.GVPublicException;
 import it.greenvulcano.gvesb.core.GreenVulcano;
 import it.greenvulcano.gvesb.core.forward.JMSForwardException;
 import it.greenvulcano.gvesb.core.forward.preprocess.Validator;
+import it.greenvulcano.gvesb.core.forward.security.JMSMessageIdentityResolver;
 import it.greenvulcano.gvesb.core.forward.util.ErrorHandlerManager;
 import it.greenvulcano.gvesb.gvdp.DataProviderManager;
 import it.greenvulcano.gvesb.gvdp.IDataProvider;
+import it.greenvulcano.gvesb.identity.GVIdentityHelper;
 import it.greenvulcano.gvesb.j2ee.JNDIHelper;
 import it.greenvulcano.gvesb.j2ee.XAHelper;
 import it.greenvulcano.gvesb.j2ee.XAHelperException;
@@ -575,7 +577,7 @@ public class JMSForwardListener implements Runnable
      */
     private void processMessage(Message msg) throws Exception
     {
-        if (!initialized) {
+        if (!initialized) {        	
             throw new JMSForwardException("Forward [" + name + "/" + forwardName + "] NOT initialized");
         }
         String cid = msg.getJMSCorrelationID();
@@ -650,7 +652,10 @@ public class JMSForwardListener implements Runnable
             GVBufferMDC.put(gvBuffer);
             if (data.isDebug()) {
                 logger.debug("Begin Core call");
-            }
+            }            
+
+            JMSMessageIdentityResolver.resolveIdentity(msg).ifPresent(GVIdentityHelper::push);           
+            
             execute(gvBuffer, flowSystem, flowService);
             
             if (acknowledgement == Session.CLIENT_ACKNOWLEDGE) {
@@ -679,7 +684,7 @@ public class JMSForwardListener implements Runnable
         if (greenVulcano == null) {
             throw new GVException("Timeout occurred in GreenVulcanoPool.getGreenVulcano()");
         }
-
+        
         try {
             greenVulcano.forward(gvBuffer, forwardName, flowSystem, flowService);
             if (getRollbackOnly()) {
