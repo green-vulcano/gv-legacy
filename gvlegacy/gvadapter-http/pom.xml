@@ -6,7 +6,7 @@
     <parent>
         <artifactId>gvlegacy</artifactId>
         <groupId>it.greenvulcano.gvesb</groupId>
-        <version>4.0.0</version>
+        <version>4.0.1-SNAPSHOT</version>
     </parent>
 
 	<groupId>it.greenvulcano.gvesb.adapter</groupId>
@@ -64,6 +64,12 @@
 			<version>2.2</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20160810</version>
+			<scope>provided</scope>
+		</dependency>
     </dependencies>
     
 
@@ -106,7 +112,8 @@
                         	org.apache.commons.io,
                         	org.apache.commons.io.output,
                         	org.slf4j;version="[1.6,2)";provider=paxlogging,
-                        	org.w3c.dom
+                        	org.w3c.dom,
+                        	org.json
                         </Import-Package>
                         <DynamicImport-Package>it.greenvulcano.*</DynamicImport-Package>
                         <Web-ContextPath>/gvesb</Web-ContextPath>
