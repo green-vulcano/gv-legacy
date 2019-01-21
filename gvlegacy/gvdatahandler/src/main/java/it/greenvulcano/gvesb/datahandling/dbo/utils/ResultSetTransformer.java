@@ -78,7 +78,7 @@ public final class ResultSetTransformer {
 		
 	}
 	
-	private static Object parseValue(Object object) {
+	public static Object parseValue(Object object) {
 		try {
 			if (object instanceof Blob) {
 				
