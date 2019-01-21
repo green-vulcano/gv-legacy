@@ -45,12 +45,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -62,6 +65,8 @@ import org.xml.sax.SAXException;
 import it.greenvulcano.configuration.XMLConfig;
 import it.greenvulcano.configuration.XMLConfigException;
 import it.greenvulcano.gvesb.datahandling.DBOException;
+import it.greenvulcano.gvesb.datahandling.dbo.utils.ResultSetTransformer;
+import it.greenvulcano.gvesb.datahandling.dbo.utils.RowSetBuilder;
 import it.greenvulcano.gvesb.datahandling.utils.DiscardCause;
 import it.greenvulcano.gvesb.datahandling.utils.ParameterType;
 import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleError;
@@ -166,16 +171,16 @@ public class DBOCallDynamicSP extends AbstractDBO
             }
 
             public SPOutputParam(String uri, Attributes attributes) throws DBOException {
-            	try {
-            		this.dbType = attributes.getValue(uri,  "db-type");
-            		this.javaType = attributes.getValue(uri, "java-type");
-            		this.javaTypeFormat = attributes.getIndex(uri,  "java-type-format") != -1 ? attributes.getValue(uri,  "java-type-format") : "";
-            		this.position = Integer.parseInt(attributes.getValue(uri,  "position"));
-            		this.precision = attributes.getIndex(uri,  "precision") != -1 ? Integer.parseInt(attributes.getValue(uri,  "precision")) : 0;
-            		this.returnInProperties = Boolean.parseBoolean(attributes.getValue(uri,  "return-in-prop"));
-            		this.returnInUUID = Boolean.parseBoolean(attributes.getValue(uri,  "return-in-uuid"));
-            		this.propName = attributes.getIndex(uri,  "prop-name") != -1 ? attributes.getValue(uri,  "prop-name") : "" + this.position;
-            		this.paramName = attributes.getIndex(uri,  "param-name") != -1 ? attributes.getValue(uri,  "param-name") : "";
+                try {
+                    this.dbType = attributes.getValue(uri,  "db-type");
+                    this.javaType = attributes.getValue(uri, "java-type");
+                    this.javaTypeFormat = attributes.getIndex(uri,  "java-type-format") != -1 ? attributes.getValue(uri,  "java-type-format") : "";
+                    this.position = Integer.parseInt(attributes.getValue(uri,  "position"));
+                    this.precision = attributes.getIndex(uri,  "precision") != -1 ? Integer.parseInt(attributes.getValue(uri,  "precision")) : 0;
+                    this.returnInProperties = Boolean.parseBoolean(attributes.getValue(uri,  "return-in-prop"));
+                    this.returnInUUID = Boolean.parseBoolean(attributes.getValue(uri,  "return-in-uuid"));
+                    this.propName = attributes.getIndex(uri,  "prop-name") != -1 ? attributes.getValue(uri,  "prop-name") : "" + this.position;
+                    this.paramName = attributes.getIndex(uri,  "param-name") != -1 ? attributes.getValue(uri,  "param-name") : "";
                 }
                 catch (Throwable exc) {
                     throw new DBOException("Error initializing the output parameter: " + exc, exc);
@@ -349,6 +354,10 @@ public class DBOCallDynamicSP extends AbstractDBO
 
         private boolean                   namedParameterMode;
 
+        private final RowSetBuilder             rowSetBuilder      = null;
+        private String                    rowSetBuilderType  = null;
+
+
         /**
          * @param node
          * @throws DBOException
@@ -358,6 +367,7 @@ public class DBOCallDynamicSP extends AbstractDBO
             try {
                 this.statement = XMLConfig.get(node, ".", "");
                 this.namedParameterMode = XMLConfig.getBoolean(node, "@named-parameter-mode", false);
+                this.rowSetBuilderType = XMLConfig.get(node, "../@rowset-builder", "standard");
 
                 if (this.statement.equals("")) {
                     throw new DBOException("Empty/misconfigured statements list for stored procedure call descriptor");
@@ -372,7 +382,7 @@ public class DBOCallDynamicSP extends AbstractDBO
         }
 
         public void addSpOutputParam(String uri, Attributes attributes) throws DBOException {
-        	this.spOutputParams.add(new SPOutputParam(uri, attributes));
+            this.spOutputParams.add(new SPOutputParam(uri, attributes));
         }
 
         /**
@@ -383,9 +393,13 @@ public class DBOCallDynamicSP extends AbstractDBO
             return this.statement;
         }
 
-		public void reset() {
-			this.spOutputParams.clear();
-		}
+        public String getRowSetBuilderType() {
+            return this.rowSetBuilderType;
+        }
+
+        public void reset() {
+             this.spOutputParams.clear();
+        }
 
         /**
          * Specify the output parameter from stored procedure
@@ -487,46 +501,46 @@ public class DBOCallDynamicSP extends AbstractDBO
                                 value = DateUtils.dateToString(new Date(ts.getTime()), format);
                             }
                             else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_CLOB)) {
-                            	Clob clob = this.namedParameterMode
+                                Clob clob = this.namedParameterMode
                                         ? callStmt.getClob(paramName)
                                         : callStmt.getClob(iPos);
                                 if (clob != null) {
-	                                InputStream is = clob.getAsciiStream();
-	                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	                                IOUtils.copy(is, baos);
-	                                is.close();
-	                                try {
-	                                	value = new String(baos.toByteArray(), 0, (int) clob.length());
-	                                }
-	                                catch (SQLFeatureNotSupportedException exc) {
-	                                	value = baos.toString();
-	                                }
-	                            }
+                                    InputStream is = clob.getAsciiStream();
+                                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                    IOUtils.copy(is, baos);
+                                    is.close();
+                                    try {
+                                        value = new String(baos.toByteArray(), 0, (int) clob.length());
+                                    }
+                                    catch (SQLFeatureNotSupportedException exc) {
+                                        value = baos.toString();
+                                    }
+                                }
                                 else {
-                                	value = "";
+                                    value = "";
                                 }
                             }
                             else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_BLOB)) {
-                            	Blob blob = this.namedParameterMode
+                                Blob blob = this.namedParameterMode
                                         ? callStmt.getBlob(paramName)
                                         : callStmt.getBlob(iPos);
-                            	if (blob != null) {
-	                                InputStream is = blob.getBinaryStream();
-	                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	                                IOUtils.copy(is, baos);
-	                                is.close();
-	                                try {
-	                                    byte[] buffer = Arrays.copyOf(baos.toByteArray(),
-	                                            (int) blob.length());
-	                                    value = new String(Base64.encodeBase64(buffer));
-	                                }
-	                                catch (SQLFeatureNotSupportedException exc) {
-	                                	value = new String(Base64.encodeBase64(baos.toByteArray()));
-	                                }
-	                            }
-                            	else {
-                            		value = "";
-                            	}
+                                if (blob != null) {
+                                    InputStream is = blob.getBinaryStream();
+                                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                    IOUtils.copy(is, baos);
+                                    is.close();
+                                    try {
+                                        byte[] buffer = Arrays.copyOf(baos.toByteArray(),
+                                                (int) blob.length());
+                                        value = new String(Base64.encodeBase64(buffer));
+                                    }
+                                    catch (SQLFeatureNotSupportedException exc) {
+                                        value = new String(Base64.encodeBase64(baos.toByteArray()));
+                                    }
+                                }
+                                else {
+                                    value = "";
+                                }
                             }
                             else {
                                 value = this.namedParameterMode ? callStmt.getString(paramName) : callStmt.getString(iPos);
@@ -583,6 +597,16 @@ public class DBOCallDynamicSP extends AbstractDBO
             }
         }
 
+        public void buildOutDocument(CallableStatement callStmt, Document xmlOut, JSONObject jsonOut, String statementId) throws DBOException
+        {
+            if (this.rowSetBuilderType.equals("json")) {
+                buildOutJSON(callStmt, jsonOut, statementId);
+            }
+            else {
+                buildOutXml(callStmt, xmlOut, statementId);
+            }
+        }
+
         /**
          * Specifies the output parameters from store procedure
          *
@@ -593,7 +617,7 @@ public class DBOCallDynamicSP extends AbstractDBO
          * @throws DBOException
          *         if an error occurred
          */
-        public void buildOutXml(CallableStatement callStmt, Document xmlOut, String statementId) throws DBOException
+        private void buildOutXml(CallableStatement callStmt, Document xmlOut, String statementId) throws DBOException
         {
             XMLUtils xml = null;
             try {
@@ -623,12 +647,12 @@ public class DBOCallDynamicSP extends AbstractDBO
                     if (javaType.equalsIgnoreCase(ParameterType.JAVA_RESULTSET)) {
                         Object obj = null;
                         try {
-                        	obj = this.namedParameterMode ? callStmt.getObject(paramName) : callStmt.getObject(iPos);
+                            obj = this.namedParameterMode ? callStmt.getObject(paramName) : callStmt.getObject(iPos);
                         }
                         catch (SQLException exc) {
-							// closed cursor?
-                        	logger.warn("Error reading Cursor output parameter... Closed cursor?", exc);
-						}
+                            // closed cursor?
+                            logger.warn("Error reading Cursor output parameter... Closed cursor?", exc);
+                        }
                         value = null;
                         if ((obj != null) && (obj instanceof ResultSet)) {
                             resultSet = (ResultSet) obj;
@@ -651,48 +675,48 @@ public class DBOCallDynamicSP extends AbstractDBO
                                 xml.setAttribute(col, FORMAT_NAME, format);
                             }
                             else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_CLOB)) {
-                            	xml.setAttribute(col, TYPE_NAME, LONG_STRING_TYPE);
-                            	Clob clob = this.namedParameterMode
+                                xml.setAttribute(col, TYPE_NAME, LONG_STRING_TYPE);
+                                Clob clob = this.namedParameterMode
                                         ? callStmt.getClob(paramName)
                                         : callStmt.getClob(iPos);
                                 if (clob != null) {
-	                                InputStream is = clob.getAsciiStream();
-	                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	                                IOUtils.copy(is, baos);
-	                                is.close();
-	                                try {
-	                                	value = new String(baos.toByteArray(), 0, (int) clob.length());
-	                                }
-	                                catch (SQLFeatureNotSupportedException exc) {
-	                                	value = baos.toString();
-	                                }
-	                            }
+                                    InputStream is = clob.getAsciiStream();
+                                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                    IOUtils.copy(is, baos);
+                                    is.close();
+                                    try {
+                                        value = new String(baos.toByteArray(), 0, (int) clob.length());
+                                    }
+                                    catch (SQLFeatureNotSupportedException exc) {
+                                        value = baos.toString();
+                                    }
+                                }
                                 else {
-                                	value = "";
+                                    value = "";
                                 }
                             }
                             else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_BLOB)) {
-                            	xml.setAttribute(col, TYPE_NAME, BASE64_TYPE);
-                            	Blob blob = this.namedParameterMode
+                                xml.setAttribute(col, TYPE_NAME, BASE64_TYPE);
+                                Blob blob = this.namedParameterMode
                                         ? callStmt.getBlob(paramName)
                                         : callStmt.getBlob(iPos);
-                            	if (blob != null) {
-	                                InputStream is = blob.getBinaryStream();
-	                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	                                IOUtils.copy(is, baos);
-	                                is.close();
-	                                try {
-	                                    byte[] buffer = Arrays.copyOf(baos.toByteArray(),
-	                                            (int) blob.length());
-	                                    value = new String(Base64.encodeBase64(buffer));
-	                                }
-	                                catch (SQLFeatureNotSupportedException exc) {
-	                                	value = new String(Base64.encodeBase64(baos.toByteArray()));
-	                                }
-	                            }
-                            	else {
-                            		value = "";
-                            	}
+                                if (blob != null) {
+                                    InputStream is = blob.getBinaryStream();
+                                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                    IOUtils.copy(is, baos);
+                                    is.close();
+                                    try {
+                                        byte[] buffer = Arrays.copyOf(baos.toByteArray(),
+                                                (int) blob.length());
+                                        value = new String(Base64.encodeBase64(buffer));
+                                    }
+                                    catch (SQLFeatureNotSupportedException exc) {
+                                        value = new String(Base64.encodeBase64(baos.toByteArray()));
+                                    }
+                                }
+                                else {
+                                    value = "";
+                                }
                             }
                             else {
                                 xml.setAttribute(col, TYPE_NAME, STRING_TYPE);
@@ -840,6 +864,65 @@ public class DBOCallDynamicSP extends AbstractDBO
                 XMLUtils.releaseParserInstance(xml);
             }
         }
+
+        private void buildOutJSON(CallableStatement callStmt, JSONObject jsonOut, String statementId) throws DBOException
+        {
+            try {
+                JSONObject root = null;
+                if (!jsonOut.has(this.ROWSET_NAME)) {
+                    jsonOut.put(this.ROWSET_NAME, new JSONObject());
+                }
+                root = jsonOut.getJSONObject(this.ROWSET_NAME);
+                JSONObject data = new JSONObject();
+                data.put(ID_NAME, statementId);
+                root.append(this.DATA_NAME, data);
+
+                JSONObject row = new JSONObject();
+                row.put(ID_NAME, DBOCallDynamicSP.this.SP_RESULT);
+                data.append(ROW_NAME, row);
+                for (int i = 0; i < this.spOutputParams.size(); i++) {
+                    SPOutputParam outp = this.spOutputParams.get(i);
+                    String dbType = outp.getDBType().trim();
+                    String javaType = outp.getJavaType().trim();
+                    String propName = outp.getPropName();
+                    String paramName = outp.getParamName();
+                    int iPos = outp.getPosition();
+                    String value = null;
+                    ResultSet resultSet = null;
+
+                    if (javaType.equalsIgnoreCase(ParameterType.JAVA_RESULTSET)) {
+                        Object obj = null;
+                        try {
+                            obj = this.namedParameterMode ? callStmt.getObject(paramName) : callStmt.getObject(iPos);
+                        }
+                        catch (SQLException exc) {
+                            // closed cursor?
+                            logger.warn("Error reading Cursor output parameter... Closed cursor?", exc);
+                        }
+                        value = null;
+                        if ((obj != null) && (obj instanceof ResultSet)) {
+                            resultSet = (ResultSet) obj;
+                        }
+                    }
+                    else {
+                        Object jsonValue = ResultSetTransformer.parseValue(this.namedParameterMode ? callStmt.getObject(paramName) : callStmt.getObject(iPos));
+                        row.put(propName,  Optional.ofNullable(jsonValue).orElse(JSONObject.NULL));
+                    }
+                    if (resultSet != null) {
+                        try {
+                            JSONArray rows = ResultSetTransformer.toJSONArray(resultSet);
+                            data.append(ROW_NAME, rows);
+                        }
+                        finally {
+                            resultSet.close();
+                        }
+                    }
+                }
+            }
+            catch (Exception exc) {
+                throw new DBOException("Generic error", exc);
+            }
+        }
     }
 
     /**
@@ -854,6 +937,8 @@ public class DBOCallDynamicSP extends AbstractDBO
     private final Map<String, SPCallDescriptor> spCallDescriptors;
 
     private Document                            xmlOut;
+    private JSONObject                          jsonOut;
+    private String                              rowSetBuilderType  = null;
 
     /**
      * Private <i>logger</i> instance.
@@ -883,6 +968,7 @@ public class DBOCallDynamicSP extends AbstractDBO
         try {
             this.forcedMode = XMLConfig.get(config, "@force-mode", MODE_CALL);
             this.isReturnData = XMLConfig.getBoolean(config, "@return-data", true);
+            this.rowSetBuilderType = XMLConfig.get(config, "@rowset-builder", "standard");
 
             NodeList stmts = XMLConfig.getNodeList(config, "statement[@type='callsp']");
             String id = null;
@@ -922,7 +1008,7 @@ public class DBOCallDynamicSP extends AbstractDBO
             InterruptedException {
         this.dataOut = new ByteArrayOutputStream();
         try {
-            createOutXML();
+            createOutDocument();
             super.execute(input, conn, props);
             storeResult();
         }
@@ -944,7 +1030,7 @@ public class DBOCallDynamicSP extends AbstractDBO
             InterruptedException {
         this.dataOut = data;
         try {
-            createOutXML();
+            createOutDocument();
             super.execute((OutputStream) null, conn, props);
             storeResult();
         }
@@ -966,7 +1052,7 @@ public class DBOCallDynamicSP extends AbstractDBO
             throws DBOException, InterruptedException {
         this.dataOut = dataOut;
         try {
-            createOutXML();
+            createOutDocument();
             super.execute(dataIn, conn, props);
             storeResult();
         }
@@ -986,41 +1072,59 @@ public class DBOCallDynamicSP extends AbstractDBO
     private void storeResult() throws DBOException
     {
         if (this.dataOut != null) {
-            XMLUtils xml = null;
-            try {
-                xml = XMLUtils.getParserInstance();
-                byte[] dataDOM = xml.serializeDOMToByteArray(this.xmlOut);
-                this.dataOut.write(dataDOM);
+            if (this.rowSetBuilderType.equals("json")) {
+                try {
+                    this.dataOut.write(this.jsonOut.toString().getBytes());
+                }
+                catch (Exception exc) {
+                    throw new DBOException("Cannot store DBOCallSP JSON result.", exc);
+                }
             }
-            catch (Exception exc) {
-                throw new DBOException("Cannot store DBOCallSP result.", exc);
-            }
-            finally {
-                XMLUtils.releaseParserInstance(xml);
+            else {
+                XMLUtils xml = null;
+                try {
+                    xml = XMLUtils.getParserInstance();
+                    byte[] dataDOM = xml.serializeDOMToByteArray(this.xmlOut);
+                    this.dataOut.write(dataDOM);
+                }
+                catch (Exception exc) {
+                    throw new DBOException("Cannot store DBOCallSP XML result.", exc);
+                }
+                finally {
+                    XMLUtils.releaseParserInstance(xml);
+                }
             }
         }
         this.xmlOut = null;
+        this.jsonOut = null;
     }
 
     /**
      * @throws DBOException
      *
      */
-    private void createOutXML() throws DBOException
+    private void createOutDocument() throws DBOException
     {
-    	for (SPCallDescriptor spc : this.spCallDescriptors.values()) {
-			spc.reset();
-		}
-        XMLUtils xml = null;
-        try {
-            xml = XMLUtils.getParserInstance();
-            this.xmlOut = xml.newDocument();
+        for (SPCallDescriptor spc : this.spCallDescriptors.values()) {
+            spc.reset();
         }
-        catch (XMLUtilsException exc) {
-            throw new DBOException("Cannot instantiate XMLUtils.", exc);
+        if (this.rowSetBuilderType.equals("json")) {
+            this.xmlOut = null;
+            this.jsonOut = new JSONObject();
         }
-        finally {
-            XMLUtils.releaseParserInstance(xml);
+        else {
+            this.jsonOut = null;
+            XMLUtils xml = null;
+            try {
+                xml = XMLUtils.getParserInstance();
+                this.xmlOut = xml.newDocument();
+            }
+            catch (XMLUtilsException exc) {
+                throw new DBOException("Cannot instantiate XMLUtils.", exc);
+            }
+            finally {
+                XMLUtils.releaseParserInstance(xml);
+            }
         }
     }
 
@@ -1029,7 +1133,7 @@ public class DBOCallDynamicSP extends AbstractDBO
         try {
             CallableStatement sqlStatement = (CallableStatement) this.sqlStatementInfo.getStatement();
             this.spCallDescriptor.setOutputParameterValuesInMap(sqlStatement, getCurrentProps());
-            this.spCallDescriptor.buildOutXml(sqlStatement, this.xmlOut, this.sqlStatementInfo.getId());
+               this.spCallDescriptor.buildOutDocument(sqlStatement, this.xmlOut, this.jsonOut, this.sqlStatementInfo.getId());
         }
         catch (DBOException exc) {
             throw exc;
@@ -1124,19 +1228,19 @@ public class DBOCallDynamicSP extends AbstractDBO
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException
     {
-    	if (SP_OUT_PARAMS.equals(localName)) {
+        if (SP_OUT_PARAMS.equals(localName)) {
             String id = attributes.getValue(uri, ID_NAME);
             this.spCallDescriptor = this.spCallDescriptors.get(id);
         }
-    	else if (SP_OUT.equals(localName)) {
-    		try {
-    			this.spCallDescriptor.addSpOutputParam(uri, attributes);
-    		}
-    		catch(DBOException exc) {
-    			throw new SAXException(exc);
-    		}
-    	}
-    	else if (ROW_NAME.equals(localName)) {
+        else if (SP_OUT.equals(localName)) {
+            try {
+                this.spCallDescriptor.addSpOutputParam(uri, attributes);
+            }
+            catch(DBOException exc) {
+                throw new SAXException(exc);
+            }
+        }
+        else if (ROW_NAME.equals(localName)) {
             this.currentRowFields.clear();
             this.colDataExpecting = false;
             this.colIdx = 0;
@@ -1202,7 +1306,7 @@ public class DBOCallDynamicSP extends AbstractDBO
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException
     {
-    	if (ROW_NAME.equals(localName)) {
+        if (ROW_NAME.equals(localName)) {
             if (!this.currCriticalError) {
                 executeStatement();
             }
