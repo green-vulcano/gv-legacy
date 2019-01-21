@@ -45,6 +45,8 @@ import it.greenvulcano.util.xml.XMLUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -404,13 +406,13 @@ public class RESTHttpServletMapping implements HttpServletMapping
                     request.setObject(requestContent);
                 } else {
                 	
-                	String requestdata = Optional.ofNullable(IOUtils.toString(req.getInputStream(), "UTF-8")).orElse("");
+                	String requestdata = Optional.ofNullable(IOUtils.toString(req.getInputStream(), StandardCharsets.UTF_8)).orElse("");
                 	
                 	JSONObject requestContent = new JSONObject();
                 	
                 	for (String param : requestdata.split("&")) {
                 		
-                		String[] paramKeyValue = param.split("=", 2);
+                		String[] paramKeyValue = URLDecoder.decode(param, StandardCharsets.UTF_8.name()).split("=", 2);
                 		
                 	    Object v = null;
                 		
