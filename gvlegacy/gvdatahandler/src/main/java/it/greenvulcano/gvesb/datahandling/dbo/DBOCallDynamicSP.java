@@ -39,6 +39,7 @@ import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,7 +50,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.json.JSONArray;
@@ -532,10 +532,10 @@ public class DBOCallDynamicSP extends AbstractDBO
                                     try {
                                         byte[] buffer = Arrays.copyOf(baos.toByteArray(),
                                                 (int) blob.length());
-                                        value = new String(Base64.encodeBase64(buffer));
+                                        value = Base64.getEncoder().encodeToString(buffer);
                                     }
                                     catch (SQLFeatureNotSupportedException exc) {
-                                        value = new String(Base64.encodeBase64(baos.toByteArray()));
+                                        value =Base64.getEncoder().encodeToString(baos.toByteArray());
                                     }
                                 }
                                 else {
@@ -708,10 +708,10 @@ public class DBOCallDynamicSP extends AbstractDBO
                                     try {
                                         byte[] buffer = Arrays.copyOf(baos.toByteArray(),
                                                 (int) blob.length());
-                                        value = new String(Base64.encodeBase64(buffer));
+                                        value = Base64.getEncoder().encodeToString(buffer);
                                     }
                                     catch (SQLFeatureNotSupportedException exc) {
-                                        value = new String(Base64.encodeBase64(baos.toByteArray()));
+                                        value = Base64.getEncoder().encodeToString(baos.toByteArray());
                                     }
                                 }
                                 else {
@@ -800,7 +800,7 @@ public class DBOCallDynamicSP extends AbstractDBO
                                                     baos.write(buffer, 0, size);
                                                 }
                                                 is.close();
-                                                value = new String(Base64.encodeBase64(baos.toByteArray()));
+                                                value = Base64.getEncoder().encodeToString(baos.toByteArray());
                                             }
                                         }
                                             break;
@@ -1392,8 +1392,7 @@ public class DBOCallDynamicSP extends AbstractDBO
                             this.currentRowFields.add(null);
                         }
                         else {
-                            byte[] data = text.getBytes();
-                            data = Base64.decodeBase64(data);
+                            byte[] data = Base64.getDecoder().decode(text.getBytes());
                             ByteArrayInputStream bais = new ByteArrayInputStream(data);
                             setBinaryStream(cs, bais, data.length);
                             this.currentRowFields.add(text);
