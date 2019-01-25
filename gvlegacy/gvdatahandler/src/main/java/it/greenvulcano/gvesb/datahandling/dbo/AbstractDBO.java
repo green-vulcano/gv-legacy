@@ -304,6 +304,9 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
      */
     public static final String COL_UPDATE_NAME            = "col-update";
 
+    public static final String SP_OUT_PARAMS_NAME         = "SPOutputParameters";
+    public static final String SP_OUT_PAR_NAME            = "SPOutputParameter";
+
     /**
      *
      */
@@ -1273,6 +1276,8 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
         String elementNS = getNamespaceURI(element);
         if (ROW_NAME.equals(elementLocalPart) || COL_NAME.equals(elementLocalPart)
                 || COL_UPDATE_NAME.equals(elementLocalPart)
+                || SP_OUT_PARAMS_NAME.equals(elementLocalPart)
+                || SP_OUT_PAR_NAME.equals(elementLocalPart)
                 || sqlStatementsParams.contains(elementLocalPart)) {
             QName qName = new QName(elementNS, elementLocalPart);
             AttributesImpl attrs = new AttributesImpl();
@@ -1286,7 +1291,7 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
             }
 
             startElement(elementNS, elementLocalPart, qName.toString(), attrs);
-            if (ROW_NAME.equals(elementLocalPart)) {
+            if (ROW_NAME.equals(elementLocalPart) || SP_OUT_PARAMS_NAME.equals(elementLocalPart)) {
                 NodeList childNodes = element.getChildNodes();
                 if (childNodes != null) {
                     for (int i = 0; i < childNodes.getLength(); i++) {
