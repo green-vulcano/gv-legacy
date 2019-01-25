@@ -45,6 +45,8 @@ import it.greenvulcano.util.xml.XMLUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -59,6 +61,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -399,6 +404,47 @@ public class RESTHttpServletMapping implements HttpServletMapping
                         requestContent = new String((byte[]) requestContent);
                     }
                     request.setObject(requestContent);
+                } else {
+                	
+                	String requestdata = Optional.ofNullable(IOUtils.toString(req.getInputStream(), StandardCharsets.UTF_8)).orElse("");
+                	
+                	JSONObject requestContent = new JSONObject();
+                	
+                	for (String param : requestdata.split("&")) {
+                		
+                		String[] paramKeyValue = URLDecoder.decode(param, StandardCharsets.UTF_8.name()).split("=", 2);
+                		
+                	    Object v = null;
+                		
+                	    if (paramKeyValue.length>1) {
+	                		try {
+	            				v = new JSONObject(paramKeyValue[1]);
+	            			} catch (JSONException notJsonObject) {
+	            				
+	            				try {
+	            					v = new JSONArray(paramKeyValue[1]);
+	            				} catch (JSONException notJsonArray) {
+	            					v =  paramKeyValue[1];
+	            				
+	            				}
+							}
+                	    } else {
+                	    	v = JSONObject.NULL;
+                	    }
+                	    
+                	    if (requestContent.has(paramKeyValue[0])) {                	    	
+                	    	
+                	    	Object currentVal  = requestContent.get(paramKeyValue[0]);                	    	
+                	    	v = currentVal instanceof JSONArray ? JSONArray.class.cast(currentVal).put(v) : new JSONArray().put(currentVal).put(v);
+                	    	
+                	    }
+                	    
+                	    requestContent.put(paramKeyValue[0], v);
+                		
+                	}
+                	
+                	request.setObject(requestContent.toString().getBytes());
+                	
                 }
             }
 
