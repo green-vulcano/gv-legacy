@@ -33,9 +33,6 @@
     <packaging>bundle</packaging>
 
     <name>GreenVulcano VCL File Plugin</name>
-    <description>
-        gvvcl-file OSGi bundle project.
-    </description>
 
     <properties>
         <maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
@@ -140,7 +137,7 @@
                         <Export-Package/>
                           
                         <Import-Package>
-                            *
+                           it.greenvulcano.util.remotefs, it.greenvulcano.util.remotefs.ftp, *
                         </Import-Package>
                     </instructions>
                 </configuration>
