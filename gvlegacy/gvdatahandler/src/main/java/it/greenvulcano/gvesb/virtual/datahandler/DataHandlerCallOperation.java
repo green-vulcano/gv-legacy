@@ -86,16 +86,24 @@ public class DataHandlerCallOperation implements CallOperation
             GVBufferPropertiesHelper.addProperties(params, gvBuffer, true);
 
             IDBOBuilder dboBuilder = dhFactory.getDBOBuilder(operation);
-            DHResult result = dboBuilder.EXECUTE(operation, gvBuffer.getObject(), params);
+            DHResult result = null;
+            try {
+	            result = dboBuilder.EXECUTE(operation, gvBuffer.getObject(), params);
 
-            gvBuffer.setObject(result.getData());
-            gvBuffer.setProperty("REC_TOTAL", "" + result.getTotal());
-            gvBuffer.setProperty("REC_READ", "" + result.getRead());
-            gvBuffer.setProperty("REC_INSERT", "" + result.getInsert());
-            gvBuffer.setProperty("REC_UPDATE", "" + result.getUpdate());
-            gvBuffer.setProperty("REC_DISCARD", "" + result.getDiscard());
-            gvBuffer.setProperty("REC_DISCARD_CAUSE", "" + result.getDiscardCauseListAsString());
-            return gvBuffer;
+	            gvBuffer.setObject(result.getData());
+	            gvBuffer.setProperty("REC_TOTAL", "" + result.getTotal());
+	            gvBuffer.setProperty("REC_READ", "" + result.getRead());
+	            gvBuffer.setProperty("REC_INSERT", "" + result.getInsert());
+	            gvBuffer.setProperty("REC_UPDATE", "" + result.getUpdate());
+	            gvBuffer.setProperty("REC_DISCARD", "" + result.getDiscard());
+	            gvBuffer.setProperty("REC_DISCARD_CAUSE", "" + result.getDiscardCauseListAsString());
+	            return gvBuffer;
+            }
+            finally {
+            	if (result != null) {
+            		result.reset();
+            	}
+            }
         }
         catch (InterruptedException exc) {
             throw exc;

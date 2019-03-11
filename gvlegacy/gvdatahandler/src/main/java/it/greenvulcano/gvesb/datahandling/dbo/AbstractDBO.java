@@ -920,6 +920,7 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
     @Override
     public void cleanup()
     {
+        dhr.reset();
         uuids.clear();
         currentRowFields.clear();
         if (sqlStatementInfo != null) {

@@ -768,9 +768,11 @@ public class DBOBuilder implements IDBOBuilder
             AbstractRetriever.setAllConnection(conn, configurationNode);
 
             IDBO idbo = firstDBO();
-            DHResult dhr = idbo.getExecutionResult();
-            dhr.setData(object);
-            dataCache.put(idbo.getInputDataName(), dhr);
+            {
+                DHResult dhrL = new DHResult(idbo.getExecutionResult());
+                dhrL.setData(object);
+                dataCache.put(idbo.getInputDataName(), dhrL);
+            }
             while (hasNext()) {
                 ThreadUtils.checkInterrupted(getClass().getSimpleName(), serviceName, logger);
                 idbo = nextDBO();
@@ -778,15 +780,15 @@ public class DBOBuilder implements IDBOBuilder
                 try {
                     NMDC.put("DH_DBO", idbo.getName());
                     if (idbo.getForcedMode().equals(IDBO.MODE_XML2DB)) {
-                        dhr = (DHResult) dataCache.get(idbo.getInputDataName());
-                        if (dhr == null) {
-                            dhr = idbo.getExecutionResult();
-                            dhr.setData(object);
+                        DHResult dhrL = (DHResult) dataCache.get(idbo.getInputDataName());
+                        if (dhrL == null) {
+                            dhrL = idbo.getExecutionResult();
+                            dhrL.setData(object);
                         }
-                        Object xmlFile = transform(idbo, dhr.getData(), localParams);
-                        dhr = idbo.getExecutionResult();
-                        dhr.setData(xmlFile);
-                        dataCache.put(idbo.getOutputDataName(), dhr);
+                        Object xmlFile = transform(idbo, dhrL.getData(), localParams);
+                        dhrL = idbo.getExecutionResult();
+                        dhrL.setData(xmlFile);
+                        dataCache.put(idbo.getOutputDataName(), dhrL);
                         if (xmlFile != null) {
                             if (logger.isDebugEnabled() && (makeDump != DUMP_NONE)) {
                                 if (xmlFile instanceof byte[]) {
@@ -832,20 +834,20 @@ public class DBOBuilder implements IDBOBuilder
                             }
                         }
                         Object xmlFile = transform(idbo, output, localParams);
-                        dhr = idbo.getExecutionResult();
-                        dhr.setData(xmlFile);
-                        dataCache.put(idbo.getOutputDataName(), dhr);
+                        DHResult dhrL = idbo.getExecutionResult();
+                        dhrL.setData(xmlFile);
+                        dataCache.put(idbo.getOutputDataName(), dhrL);
                     }
                     else {
-                        dhr = (DHResult) dataCache.get(idbo.getInputDataName());
-                        if (dhr == null) {
-                            dhr = idbo.getExecutionResult();
-                            dhr.setData(object);
+                        DHResult dhrL = (DHResult) dataCache.get(idbo.getInputDataName());
+                        if (dhrL == null) {
+                            dhrL = idbo.getExecutionResult();
+                            dhrL.setData(object);
                         }
-                        Object xmlFile = transform(idbo, dhr.getData(), localParams);
-                        dhr = idbo.getExecutionResult();
-                        dhr.setData(xmlFile);
-                        dataCache.put(idbo.getOutputDataName(), dhr);
+                        Object xmlFile = transform(idbo, dhrL.getData(), localParams);
+                        dhrL = idbo.getExecutionResult();
+                        dhrL.setData(xmlFile);
+                        dataCache.put(idbo.getOutputDataName(), dhrL);
                         if (xmlFile != null) {
                             if (logger.isDebugEnabled() && (makeDump != DUMP_NONE)) {
                                 if (xmlFile instanceof byte[]) {
@@ -879,9 +881,9 @@ public class DBOBuilder implements IDBOBuilder
 
                         byte[] output = out.toByteArray();
                         xmlFile = output;
-                        dhr = idbo.getExecutionResult();
-                        dhr.setData(xmlFile);
-                        dataCache.put(idbo.getOutputDataName(), dhr);
+                        dhrL = idbo.getExecutionResult();
+                        dhrL.setData(xmlFile);
+                        dataCache.put(idbo.getOutputDataName(), dhrL);
                     }
                 }
                 finally {
@@ -900,7 +902,7 @@ public class DBOBuilder implements IDBOBuilder
                 logger.debug("Committing EXECUTE [" + operation + "].");
                 conn.commit();
             }
-            dhr = (DHResult) dataCache.get(outputDataName);
+            DHResult dhr = new DHResult((DHResult) dataCache.get(outputDataName));
             if (!dboOutputMap.get(outputDataName).isReturnData()) {
                 dhr.setData(null);
             }
@@ -949,7 +951,6 @@ public class DBOBuilder implements IDBOBuilder
                     dhr.setTotal(_dhr.getTotal());
 
                     _dhr = null;
-
                 }
             }
 
@@ -983,7 +984,7 @@ public class DBOBuilder implements IDBOBuilder
                 }
                 dhr.setData(xmlFile);
             }
-            
+
             if (logger.isDebugEnabled() && (xmlFile != null) && (makeDump != DUMP_NONE)) {
                 if (xmlFile instanceof byte[]) {
                     if (makeDump == DUMP_HEX) {
