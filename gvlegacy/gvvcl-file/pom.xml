@@ -82,6 +82,12 @@
     		<version>${axiom.version}</version>
     		<type>bundle</type>
 		</dependency>
+		<dependency>
+			<groupId>jsch</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.29</version>
+			<type>jar</type>
+		</dependency>
 
 		<!-- *************** TEST *************** -->
 		 <dependency>
@@ -137,8 +143,28 @@
                         <Export-Package/>
                           
                         <Import-Package>
-                           it.greenvulcano.util.remotefs, it.greenvulcano.util.remotefs.ftp, *
+                            it.greenvulcano.util.remotefs;version="[4.0,5)",
+                            it.greenvulcano.util.remotefs.ftp;version="[4.0,5)"
+							it.greenvulcano.configuration;version="[4.0,5)",
+							it.greenvulcano.expression.ognl;version="[4.0,5)",
+							it.greenvulcano.gvesb.buffer;version="[4.0,5)",
+							it.greenvulcano.gvesb.core.config;version="[4.0,5)",
+							it.greenvulcano.gvesb.core.pool;version="[4.0,5)",
+							it.greenvulcano.gvesb.internal.data;version="[4.0,5)",
+							it.greenvulcano.gvesb.virtual;version="[4.0,5)",
+							it.greenvulcano.util.bin;version="[4.0,5)",
+							it.greenvulcano.util.file;version="[4.0,5)",
+							it.greenvulcano.util.file.monitor;version="[4.0,5)",
+							it.greenvulcano.util.metadata;version="[4.0,5)",
+							it.greenvulcano.util.txt;version="[4.0,5)",
+							it.greenvulcano.util.xml;version="[4.0,5)",
+							it.greenvulcano.util.zip;version="[4.0,5)",
+							org.osgi.framework;version="[1.8,2)",
+							org.slf4j;version="[1.7,2)",
+							org.w3c.dom
                         </Import-Package>
+                        <Embed-Dependency>*;scope=compile;type=jar</Embed-Dependency>
+						<Embed-Transitive>true</Embed-Transitive>
                     </instructions>
                 </configuration>
             </plugin>
