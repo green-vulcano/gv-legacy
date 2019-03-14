@@ -83,10 +83,10 @@
     		<type>bundle</type>
 		</dependency>
 		<dependency>
-			<groupId>jsch</groupId>
-			<artifactId>jsch</artifactId>
-			<version>0.1.29</version>
-			<type>jar</type>
+		  <groupId>com.jcraft</groupId>
+		  <artifactId>jsch</artifactId>
+		  <version>0.1.54</version>
+		  <type>jar</type>
 		</dependency>
 
 		<!-- *************** TEST *************** -->
@@ -152,6 +152,7 @@
 							it.greenvulcano.gvesb.core.pool;version="[4.0,5)",
 							it.greenvulcano.gvesb.internal.data;version="[4.0,5)",
 							it.greenvulcano.gvesb.virtual;version="[4.0,5)",
+                                                        it.greenvulcano.util;version="[4.0,5)",
 							it.greenvulcano.util.bin;version="[4.0,5)",
 							it.greenvulcano.util.file;version="[4.0,5)",
 							it.greenvulcano.util.file.monitor;version="[4.0,5)",
