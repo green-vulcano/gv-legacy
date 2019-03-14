@@ -159,6 +159,7 @@
 							it.greenvulcano.util.txt;version="[4.0,5)",
 							it.greenvulcano.util.xml;version="[4.0,5)",
 							it.greenvulcano.util.zip;version="[4.0,5)",
+							it.greenvulcano.configuration,
 							org.osgi.framework;version="[1.8,2)",
 							org.slf4j;version="[1.7,2)",
 							org.w3c.dom
