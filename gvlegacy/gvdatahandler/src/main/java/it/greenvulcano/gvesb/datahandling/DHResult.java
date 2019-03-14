@@ -45,6 +45,20 @@ public class DHResult implements Serializable
     private long               discard;
     private List<DiscardCause> discardCauseList = new ArrayList<DiscardCause>();
 
+    public DHResult() {
+    	// do nothing
+    }
+
+    public DHResult(DHResult toCopy) {
+    	this.data = toCopy.data;
+        this.read = toCopy.read;
+        this.total = toCopy.total;
+        this.insert = toCopy.insert;
+        this.update = toCopy.update;
+        this.discard = toCopy.discard;
+        this.discardCauseList = new ArrayList<DiscardCause>(toCopy.discardCauseList);
+    }
+
     /**
      *
      */
