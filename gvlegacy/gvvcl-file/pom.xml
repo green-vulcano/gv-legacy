@@ -1,55 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <!--
-       Licensed to the Apache Software Foundation (ASF) under one
-       or more contributor license agreements.  See the NOTICE file
-       distributed with this work for additional information
-       regarding copyright ownership.  The ASF licenses this file
-       to you under the Apache License, Version 2.0 (the
-       "License"); you may not use this file except in compliance
-       with the License.  You may obtain a copy of the License at
+	<!-- Licensed to the Apache Software Foundation (ASF) under one or more 
+		contributor license agreements. See the NOTICE file distributed with this 
+		work for additional information regarding copyright ownership. The ASF licenses 
+		this file to you under the Apache License, Version 2.0 (the "License"); you 
+		may not use this file except in compliance with the License. You may obtain 
+		a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless 
+		required by applicable law or agreed to in writing, software distributed 
+		under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES 
+		OR CONDITIONS OF ANY KIND, either express or implied. See the License for 
+		the specific language governing permissions and limitations under the License. -->
 
-         http://www.apache.org/licenses/LICENSE-2.0
+	<modelVersion>4.0.0</modelVersion>
 
-       Unless required by applicable law or agreed to in writing,
-       software distributed under the License is distributed on an
-       "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-       KIND, either express or implied.  See the License for the
-       specific language governing permissions and limitations
-       under the License.
-    -->
+	<parent>
+		<groupId>it.greenvulcano.gvesb</groupId>
+		<artifactId>gvlegacy</artifactId>
+		<version>4.0.1-SNAPSHOT</version>
+	</parent>
 
-    <modelVersion>4.0.0</modelVersion>
+	<groupId>it.greenvulcano.gvesb.adapter</groupId>
+	<artifactId>gvvcl-file</artifactId>
+	<packaging>bundle</packaging>
 
-    <parent>
-      <groupId>it.greenvulcano.gvesb</groupId>
-  		<artifactId>gvlegacy</artifactId>
-  		<version>4.0.1-SNAPSHOT</version>
-    </parent>
+	<name>GreenVulcano VCL File Plugin</name>
 
-    <groupId>it.greenvulcano.gvesb.adapter</groupId>
-    <artifactId>gvvcl-file</artifactId>
-    <packaging>bundle</packaging>
+	<properties>
+		<maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
+		<osgi.version>6.0.0</osgi.version>
+		<version.slf4j>1.6.1</version.slf4j>
+		<log4j2.version>1.9.1</log4j2.version>
+		<axiom.version>1.2.11</axiom.version>
+	</properties>
 
-    <name>GreenVulcano VCL File Plugin</name>
-
-    <properties>
-        <maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
-        <osgi.version>6.0.0</osgi.version>
-        <version.slf4j>1.6.1</version.slf4j>
-        <log4j2.version>1.9.1</log4j2.version>
-        <axiom.version>1.2.11</axiom.version>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-            <version>${osgi.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>${osgi.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>it.greenvulcano.gvesb</groupId>
 			<artifactId>gvbase</artifactId>
 			<version>${project.version}</version>
@@ -70,81 +63,84 @@
 			<type>bundle</type>
 			<scope>provided</scope>
 		</dependency>
-			<dependency>
+		<dependency>
 			<groupId>org.ops4j.pax.logging</groupId>
 			<artifactId>pax-logging-log4j2</artifactId>
 			<version>${log4j2.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-    		<groupId>org.apache.ws.commons.axiom</groupId>
-    		<artifactId>axiom-impl</artifactId>
-    		<version>${axiom.version}</version>
-    		<type>bundle</type>
+			<groupId>org.apache.ws.commons.axiom</groupId>
+			<artifactId>axiom-impl</artifactId>
+			<version>${axiom.version}</version>
+			<type>bundle</type>
 		</dependency>
 		<dependency>
-		  <groupId>com.jcraft</groupId>
-		  <artifactId>jsch</artifactId>
-		  <version>0.1.54</version>
-		  <type>jar</type>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.54</version>
+			<type>jar</type>
 		</dependency>
 
 		<!-- *************** TEST *************** -->
-		 <dependency>
+		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.5</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-   			<groupId>commons-net</groupId>
-   			<artifactId>commons-net</artifactId>
-   			<version>3.1</version>
-   			<scope>test</scope>
+			<groupId>commons-net</groupId>
+			<artifactId>commons-net</artifactId>
+			<version>3.1</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
-    		<groupId>xml-resolver</groupId>
-    		<artifactId>xml-resolver</artifactId>
-    		<version>1.2</version>
-    		<scope>test</scope>
+			<groupId>xml-resolver</groupId>
+			<artifactId>xml-resolver</artifactId>
+			<version>1.2</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
-    		<groupId>org.mockftpserver</groupId>
-    		<artifactId>MockFtpServer</artifactId>
-    		<version>2.0.2</version>
-    		<scope>test</scope>
+			<groupId>org.mockftpserver</groupId>
+			<artifactId>MockFtpServer</artifactId>
+			<version>2.0.2</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
-    		<groupId>org.springframework</groupId>
-   			<artifactId>spring-context</artifactId>
-   			<version>4.3.7.RELEASE</version>
-   			<scope>test</scope>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>4.3.7.RELEASE</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
-    		<groupId>commons-beanutils</groupId>
-    		<artifactId>commons-beanutils</artifactId>
-    		<version>1.0</version>
-    		<scope>test</scope>
+			<groupId>commons-beanutils</groupId>
+			<artifactId>commons-beanutils</artifactId>
+			<version>1.0</version>
+			<scope>test</scope>
 		</dependency>
-	 </dependencies>
+	</dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${maven-bundle-plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Bundle-Activator>it.greenvulcano.gvesb.virtual.file.Activator</Bundle-Activator>
-                        <Export-Package/>
-                          
-                        <Import-Package>
-                            it.greenvulcano.util.remotefs;version="[4.0,5)",
-                            it.greenvulcano.util.remotefs.ftp;version="[4.0,5)"
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>${maven-bundle-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						<Bundle-Activator>it.greenvulcano.gvesb.virtual.file.Activator</Bundle-Activator>
+						<Export-Package />
+
+						<Import-Package>
+							javax.crypto,
+							javax.crypto.spec,
+							javax.crypto.interfaces,
+							it.greenvulcano.util.remotefs;version="[4.0,5)",
+							it.greenvulcano.util.remotefs.ftp;version="[4.0,5)"
 							it.greenvulcano.configuration;version="[4.0,5)",
 							it.greenvulcano.expression.ognl;version="[4.0,5)",
 							it.greenvulcano.gvesb.buffer;version="[4.0,5)",
@@ -152,7 +148,7 @@
 							it.greenvulcano.gvesb.core.pool;version="[4.0,5)",
 							it.greenvulcano.gvesb.internal.data;version="[4.0,5)",
 							it.greenvulcano.gvesb.virtual;version="[4.0,5)",
-                                                        it.greenvulcano.util;version="[4.0,5)",
+							it.greenvulcano.util;version="[4.0,5)",
 							it.greenvulcano.util.bin;version="[4.0,5)",
 							it.greenvulcano.util.file;version="[4.0,5)",
 							it.greenvulcano.util.file.monitor;version="[4.0,5)",
@@ -164,23 +160,23 @@
 							org.osgi.framework;version="[1.8,2)",
 							org.slf4j;version="[1.7,2)",
 							org.w3c.dom
-                        </Import-Package>
-                        <Embed-Dependency>*;scope=compile;type=jar</Embed-Dependency>
+						</Import-Package>
+						<Embed-Dependency>*;scope=compile;type=jar</Embed-Dependency>
 						<Embed-Transitive>true</Embed-Transitive>
-                    </instructions>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <maxmem>256M</maxmem>
-                </configuration>
-            </plugin>
+					</instructions>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+					<maxmem>256M</maxmem>
+				</configuration>
+			</plugin>
 
-        </plugins>
-    </build>
+		</plugins>
+	</build>
 
 </project>
