@@ -20,51 +20,73 @@
 package tests.unit.datahandler;
 
 import java.sql.Connection;
-import java.sql.SQLException;
-
+import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.hsqldb.jdbc.JDBCDataSource;
+import org.springframework.mock.jndi.SimpleNamingContextBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-/**
- * @version 3.2.0 02/10/2011
- * @author GreenVulcano Developer Team
- */
-public class Commons
-{
-    /**
-     * @throws SQLException
-     *
-     */
-    public static void createDB(Connection connection) throws SQLException
-    {
-        connection.prepareStatement(
-                "create table testtable (id INTEGER primary key, field1 VARCHAR(30), field2 TIMESTAMP, field3 NUMERIC(8,3));").execute();
-        connection.prepareStatement(
-                "insert into testtable (id, field1, field2, field3) values (1, 'testvalue', '2000-01-01 12:30:45', 123.456);").execute();
-//                "insert into testtable (id, field1, field2, field3) values (1, 'testvalue', TO_TIMESTAMP('2000-01-01 12:30:45', 'YYYY-MM-DD HH24:MI:SS'), 123.456);").execute();
+import it.greenvulcano.gvesb.j2ee.JNDIHelper;
+
+public class Commons {
+    
+    static {
+        JDBCDataSource dataSource = new JDBCDataSource();
+
+        dataSource.setDatabase("jdbc:hsqldb:mem:testdb");
+         
+        SimpleNamingContextBuilder builder = new SimpleNamingContextBuilder();
+        builder.bind("java:comp/env/jdbc/testDHDataSource", dataSource);
+        try {
+            builder.activate();
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+    }
+    
+   public static Connection getConnection() throws Exception {
         
-        connection.prepareStatement(
-                "create table testtablemulti (id INTEGER primary key, field1 VARCHAR(30), field2 TIMESTAMP, field3 NUMERIC(8,3), field4 DATE, field5 TIME, field6 BOOLEAN, field7 SMALLINT, field8 BIGINT, field9 FLOAT, field10 DOUBLE);").execute();
-        connection.prepareStatement(
-                "insert into testtablemulti (id, field1, field2, field3, field4, field5, field6, field7, field8, field9, field10) values (1, 'testvalue', '2000-01-01 12:30:45', 123.456, '2000-01-01', '12:30:45', TRUE, 30000, 123456789012345, 3.1234567890, 4.123456789012345);").execute();
+        Connection c = null;
+        
+        JNDIHelper context = new JNDIHelper();
+        try {
+            DataSource ds = (DataSource) context.lookup("java:comp/env/jdbc/testDHDataSource");
+            c = ds.getConnection();
+        } finally {
+            context.close();
+        }
+        
+        return c;
+    }
+
+    public static void createDB() throws Exception {
+
+        Connection connection = getConnection();
+        
+        connection.prepareStatement("create table testtable (id INTEGER primary key, field1 VARCHAR(30), field2 TIMESTAMP, field3 NUMERIC(8,3));").execute();
+        connection.prepareStatement("insert into testtable (id, field1, field2, field3) values (1, 'testvalue', '2000-01-01 12:30:45', 123.456);").execute();
+
+        connection.prepareStatement("create table testtablemulti (id INTEGER primary key, field1 VARCHAR(30), field2 TIMESTAMP, field3 NUMERIC(8,3), field4 DATE, field5 TIME, field6 BOOLEAN, field7 SMALLINT, field8 BIGINT, field9 FLOAT, field10 DOUBLE);")
+                  .execute();
+        connection.prepareStatement("insert into testtablemulti (id, field1, field2, field3, field4, field5, field6, field7, field8, field9, field10) values (1, 'testvalue', '2000-01-01 12:30:45', 123.456, '2000-01-01', '12:30:45', TRUE, 30000, 123456789012345, 3.1234567890, 4.123456789012345);")
+                  .execute();
 
     }
 
-    /**
-     * @throws SQLException
-     *
-     */
-    public static void clearDB(Connection connection) throws SQLException
-    {
+    public static void clearDB() throws Exception {
+
+        Connection connection = getConnection();
+        
         connection.prepareStatement("drop table testtable;").execute();
         connection.prepareStatement("drop table testtablemulti;").execute();
     }
 
-    public static Document createInsertMessage() throws Exception
-    {
+    public static Document createInsertMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -121,8 +143,8 @@ public class Commons
         return doc;
     }
 
-    public static Document createInsertMultiMessage() throws Exception
-    {
+    public static Document createInsertMultiMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -239,9 +261,8 @@ public class Commons
         return doc;
     }
 
-    
-    public static Document createInsertNPMessage() throws Exception
-    {
+    public static Document createInsertNPMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -298,8 +319,8 @@ public class Commons
         return doc;
     }
 
-    public static Document createInsertMultiNPMessage() throws Exception
-    {
+    public static Document createInsertMultiNPMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -416,8 +437,8 @@ public class Commons
         return doc;
     }
 
-    public static Document createUpdateNPMessage() throws Exception
-    {
+    public static Document createUpdateNPMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -473,9 +494,9 @@ public class Commons
         row.appendChild(field3);
         return doc;
     }
-    
-    public static Document createUpdateMultiNPMessage() throws Exception
-    {
+
+    public static Document createUpdateMultiNPMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -592,8 +613,8 @@ public class Commons
         return doc;
     }
 
-    public static Document createInsertMixNPMessage() throws Exception
-    {
+    public static Document createInsertMixNPMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -625,7 +646,7 @@ public class Commons
         field3.setAttribute("number-format", "#,##0.000");
         field3.appendChild(doc.createTextNode("12.345,123"));
         row.appendChild(field3);
-        
+
         row = doc.createElement("row");
         row.setAttribute("id", "0");
         data.appendChild(row);
@@ -673,7 +694,7 @@ public class Commons
         field3.setAttribute("number-format", "#0.00");
         field3.appendChild(doc.createTextNode("5.12"));
         row.appendChild(field3);
-        
+
         row = doc.createElement("row");
         row.setAttribute("id", "0");
         data.appendChild(row);
@@ -701,8 +722,8 @@ public class Commons
         return doc;
     }
 
-    public static Document createInsertMultiMixNPMessage() throws Exception
-    {
+    public static Document createInsertMultiMixNPMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -764,7 +785,7 @@ public class Commons
         field10.setAttribute("type", "double");
         field10.appendChild(doc.createTextNode(String.valueOf(Double.MAX_VALUE)));
         row.appendChild(field10);
-        
+
         row = doc.createElement("row");
         row.setAttribute("id", "0");
         data.appendChild(row);
@@ -872,7 +893,7 @@ public class Commons
         field10.setAttribute("type", "double");
         field10.appendChild(doc.createTextNode(String.valueOf(Double.MIN_VALUE)));
         row.appendChild(field10);
-        
+
         row = doc.createElement("row");
         row.setAttribute("id", "0");
         data.appendChild(row);
@@ -930,8 +951,8 @@ public class Commons
         return doc;
     }
 
-    public static Document createUpdateMixNPMessage() throws Exception
-    {
+    public static Document createUpdateMixNPMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -963,7 +984,7 @@ public class Commons
         field3.setAttribute("number-format", "#,##0.000");
         field3.appendChild(doc.createTextNode("12.345,123"));
         row.appendChild(field3);
-        
+
         row = doc.createElement("row");
         row.setAttribute("id", "0");
         data.appendChild(row);
@@ -1011,7 +1032,7 @@ public class Commons
         field3.setAttribute("number-format", "#0.00");
         field3.appendChild(doc.createTextNode("5.12"));
         row.appendChild(field3);
-        
+
         row = doc.createElement("row");
         row.setAttribute("id", "0");
         data.appendChild(row);
@@ -1039,8 +1060,8 @@ public class Commons
         return doc;
     }
 
-    public static Document createUpdateMultiMixNPMessage() throws Exception
-    {
+    public static Document createUpdateMultiMixNPMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -1102,7 +1123,7 @@ public class Commons
         field10.setAttribute("type", "double");
         field10.appendChild(doc.createTextNode(String.valueOf(Double.MAX_VALUE)));
         row.appendChild(field10);
-        
+
         row = doc.createElement("row");
         row.setAttribute("id", "0");
         data.appendChild(row);
@@ -1210,7 +1231,7 @@ public class Commons
         field10.setAttribute("type", "double");
         field10.appendChild(doc.createTextNode(String.valueOf(Double.MAX_VALUE)));
         row.appendChild(field10);
-        
+
         row = doc.createElement("row");
         row.setAttribute("id", "0");
         data.appendChild(row);
@@ -1268,8 +1289,8 @@ public class Commons
         return doc;
     }
 
-    public static Document createInsertOrUpdateMessage() throws Exception
-    {
+    public static Document createInsertOrUpdateMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();
@@ -1376,9 +1397,9 @@ public class Commons
 
         return doc;
     }
-    
-    public static Document createInsertOrUpdateMultiMessage() throws Exception
-    {
+
+    public static Document createInsertOrUpdateMultiMessage() throws Exception {
+
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = documentFactory.newDocumentBuilder();
         Document doc = docBuilder.newDocument();

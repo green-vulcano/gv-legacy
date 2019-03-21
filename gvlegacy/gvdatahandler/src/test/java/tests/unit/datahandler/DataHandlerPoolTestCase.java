@@ -23,61 +23,31 @@ package tests.unit.datahandler;
 import it.greenvulcano.configuration.XMLConfig;
 import it.greenvulcano.gvesb.datahandling.DHResult;
 import it.greenvulcano.gvesb.datahandling.utils.dao.DataAccessObject;
-import junit.framework.TestCase;
-
-import java.sql.Connection;
-
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.sql.DataSource;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-/**
- * @version 3.1.0 Feb 17, 2011
- * @author GreenVulcano Developer Team
- */
-public class DataHandlerPoolTestCase extends TestCase
-{
+import static org.junit.Assert.*;
 
-    private Connection connection;
-
-    /**
-     * @see junit.framework.TestCase#setUp()
-     */
-    @Override
-    protected void setUp() throws Exception
-    {
-    	XMLConfig.setBaseConfigPath(getClass().getClassLoader().getResource(".").getPath());
-        Context context = new InitialContext();
-        try {
-            DataSource ds = (DataSource) context.lookup("openejb:Resource/testDHDataSource");
-            connection = ds.getConnection();
-        }
-        finally {
-            context.close();
-        }
-        Commons.createDB(connection);
+public class DataHandlerPoolTestCase {
+        
+    @Before
+    public void setUp() throws Exception  {
+        XMLConfig.setBaseConfigPath(getClass().getClassLoader().getResource(".").getPath());
+      
+        Commons.createDB();
     }
 
-    /**
-     * @see junit.framework.TestCase#tearDown()
-     */
-    @Override
-    protected void tearDown() throws Exception
-    {
-        Commons.clearDB(connection);
-        connection.close();
+    @After
+    public void tearDown() throws Exception {
+        Commons.clearDB();        
     }
 
-    /**
-     * @throws Exception
-     *
-     */
-    public void testDHCallSelect() throws Exception
-    {
+    @Test
+    public void testDHCallSelect() throws Exception  {
         String operation = "GVESB::TestSelect";
         DHResult result = DataAccessObject.execute(operation, null, null);
         assertNotNull(result);
@@ -106,11 +76,8 @@ public class DataHandlerPoolTestCase extends TestCase
         assertEquals("123,45", field3);
     }
 
-    /**
-     * @throws Exception
-     */
-    public final void testDHCallInsertOrUpdate() throws Exception
-    {
+    @Test
+    public final void testDHCallInsertOrUpdate() throws Exception  {
         String operation = "GVESB::TestInsert";
         DHResult result = DataAccessObject.execute(operation, Commons.createInsertMessage(), null);
         assertEquals(0, result.getDiscard());

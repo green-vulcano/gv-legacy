@@ -7,7 +7,7 @@
     <parent>
         <artifactId>gvlegacy</artifactId>
         <groupId>it.greenvulcano.gvesb</groupId>
-        <version>4.0.1-SNAPSHOT</version>
+        <version>4.0.1</version>
     </parent>
 
 	<groupId>it.greenvulcano.gvesb.adapter</groupId>
@@ -81,23 +81,25 @@
 
 		<!-- *************** TEST *************** -->
 
-		<dependency>
-			<groupId>org.apache.openejb</groupId>
-			<artifactId>openejb-core</artifactId>
-			<version>4.7.4</version>
-			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<artifactId>slf4j-jdk14</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-			</exclusions>
+        <dependency>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-core</artifactId>
+          <version>2.0.8</version>
+          <scope>test</scope>
+        </dependency>
+
+        <dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-mock</artifactId>
+		  <version>2.0.8</version>
+		  <scope>test</scope>
 		</dependency>
+
 		<dependency>
-			<groupId>org.neo4j</groupId>
-			<artifactId>neo4j-jdbc-gv</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-			<scope>test</scope>
+		    <groupId>org.hsqldb</groupId>
+		    <artifactId>hsqldb</artifactId>
+		    <version>2.3.2</version>
+		    <scope>test</scope>
 		</dependency>
 
 	</dependencies>
