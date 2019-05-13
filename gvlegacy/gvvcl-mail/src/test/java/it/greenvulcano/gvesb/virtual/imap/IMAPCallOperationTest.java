@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.greenvulcano.gvesb.virtual.imap;
 
+import java.util.Locale;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
@@ -48,6 +50,11 @@ public class IMAPCallOperationTest extends TestCase {
     private static ServerSetup  SMTP         = new ServerSetup(11025, null, ServerSetup.PROTOCOL_SMTP);
     private static ServerSetup  IMAP         = new ServerSetup(11143, null, ServerSetup.PROTOCOL_IMAP);
 
+    
+    static {
+        Locale.setDefault(new Locale ("en", "US"));
+    }
+    
     /**
      * @see junit.framework.TestCase#setUp()
      */

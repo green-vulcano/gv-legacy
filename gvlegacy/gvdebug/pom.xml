@@ -21,10 +21,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-    <artifactId>gvlegacy</artifactId>
-    <groupId>it.greenvulcano.gvesb</groupId>
-    <version>4.0.1</version>
-  </parent>
+        <artifactId>gvlegacy</artifactId>
+        <groupId>it.greenvulcano.gvesb</groupId>
+        <version>4.1.0-SNAPSHOT</version>
+    </parent>
 
     <artifactId>gvdebug</artifactId>
     <packaging>bundle</packaging>
