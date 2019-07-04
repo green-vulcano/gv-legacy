@@ -111,6 +111,7 @@
                         	org.osgi.framework,
                         	org.apache.commons.io,
                         	org.apache.commons.io.output,
+                        	org.apache.xerces.parsers,
                         	org.slf4j;version="[1.6,2)";provider=paxlogging,
                         	org.w3c.dom,
                         	org.json
