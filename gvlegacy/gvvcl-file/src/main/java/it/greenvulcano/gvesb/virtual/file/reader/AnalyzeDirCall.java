@@ -30,7 +30,7 @@ import it.greenvulcano.gvesb.virtual.InvalidDataException;
 import it.greenvulcano.gvesb.virtual.OperationKey;
 import it.greenvulcano.util.file.monitor.AnalysisReport;
 import it.greenvulcano.util.file.monitor.FileSystemMonitor;
-
+import it.greenvulcano.util.file.monitor.FileSystemMonitorFactory;
 
 import java.util.Map;
 
@@ -85,7 +85,7 @@ public class AnalyzeDirCall implements CallOperation
         try {
             name = XMLConfig.get(node, "@name");
             Node fsNode = XMLConfig.getNode(node, "*[@type='fs-monitor']");
-            fileSystemMonitor = (FileSystemMonitor) Class.forName(XMLConfig.get(fsNode, "@class")).newInstance();
+            fileSystemMonitor = FileSystemMonitorFactory.buildInstance(XMLConfig.get(fsNode, "@class"));
             fileSystemMonitor.init(fsNode);
             
             logger.info("AnalyzeDirCall " + name + " configured");

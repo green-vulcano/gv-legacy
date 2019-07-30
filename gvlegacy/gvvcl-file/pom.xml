@@ -76,6 +76,12 @@
 			<type>bundle</type>
 		</dependency>
 		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>
 			<version>0.1.54</version>
@@ -83,12 +89,6 @@
 		</dependency>
 
 		<!-- *************** TEST *************** -->
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.5</version>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>commons-net</groupId>
 			<artifactId>commons-net</artifactId>
@@ -151,12 +151,12 @@
 							it.greenvulcano.util;version="[4.0,5)",
 							it.greenvulcano.util.bin;version="[4.0,5)",
 							it.greenvulcano.util.file;version="[4.0,5)",
-							it.greenvulcano.util.file.monitor;version="[4.0,5)",
 							it.greenvulcano.util.metadata;version="[4.0,5)",
 							it.greenvulcano.util.txt;version="[4.0,5)",
 							it.greenvulcano.util.xml;version="[4.0,5)",
 							it.greenvulcano.util.zip;version="[4.0,5)",
 							it.greenvulcano.configuration,
+							org.apache.commons.io,
 							org.osgi.framework;version="[1.8,2)",
 							org.slf4j;version="[1.7,2)",
 							org.w3c.dom
