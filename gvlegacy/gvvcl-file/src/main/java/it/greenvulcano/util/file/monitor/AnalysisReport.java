@@ -55,6 +55,8 @@ public interface AnalysisReport
      *         if the most recently performed analysis produced no results
      */
     Document toXML() throws MonitorException;
+    
+    String toJSON() throws MonitorException;
 
     /**
      * Returns the current analyzed directory.

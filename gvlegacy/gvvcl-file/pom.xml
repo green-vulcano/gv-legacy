@@ -82,6 +82,12 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20180130</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>
 			<version>0.1.54</version>
@@ -159,6 +165,7 @@
 							org.apache.commons.io,
 							org.osgi.framework;version="[1.8,2)",
 							org.slf4j;version="[1.7,2)",
+							org.json,
 							org.w3c.dom
 						</Import-Package>
 						<Embed-Dependency>*;scope=compile;type=jar</Embed-Dependency>
