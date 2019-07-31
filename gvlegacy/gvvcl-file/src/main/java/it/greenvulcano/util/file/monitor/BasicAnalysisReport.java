@@ -22,17 +22,15 @@ package it.greenvulcano.util.file.monitor;
 import it.greenvulcano.util.file.FileNameSorter;
 import it.greenvulcano.util.file.FileProperties;
 import it.greenvulcano.util.file.FileTimeSorter;
-import it.greenvulcano.util.json.JSONUtils;
-import it.greenvulcano.util.json.JSONUtilsException;
 import it.greenvulcano.util.txt.DateUtils;
 import it.greenvulcano.util.xml.XMLUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.json.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -386,9 +384,18 @@ public class BasicAnalysisReport implements AnalysisReport {
 
     @Override
     public String toJSON() throws MonitorException {
+
         try {
-            return JSONUtils.xmlToJson(toXML()).toString();
-        } catch (JSONUtilsException e) {
+
+            if (created) {
+                String report = XMLUtils.serializeDOM_S(xmlReport.getDocumentElement());
+
+                return XML.toJSONObject(report).toString();
+            }
+
+            throw new IllegalArgumentException("Analysis report NOT available");
+
+        } catch (Exception e) {
             throw new MonitorException(e);
         }
     }
