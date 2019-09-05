@@ -30,7 +30,7 @@ import it.greenvulcano.gvesb.virtual.InvalidDataException;
 import it.greenvulcano.gvesb.virtual.OperationKey;
 import it.greenvulcano.util.file.monitor.AnalysisReport;
 import it.greenvulcano.util.file.monitor.FileSystemMonitor;
-
+import it.greenvulcano.util.file.monitor.FileSystemMonitorFactory;
 
 import java.util.Map;
 
@@ -67,6 +67,7 @@ public class AnalyzeDirCall implements CallOperation
      */
     private FileSystemMonitor   fileSystemMonitor = null;
 
+    private String outputFormat = "JSON";
 
     /**
      * Invoked from <code>OperationFactory</code> when an <code>Operation</code>
@@ -84,8 +85,10 @@ public class AnalyzeDirCall implements CallOperation
     {
         try {
             name = XMLConfig.get(node, "@name");
+            outputFormat = XMLConfig.get(node, "@reportFormat", "XML").toUpperCase();
+            
             Node fsNode = XMLConfig.getNode(node, "*[@type='fs-monitor']");
-            fileSystemMonitor = (FileSystemMonitor) Class.forName(XMLConfig.get(fsNode, "@class")).newInstance();
+            fileSystemMonitor = FileSystemMonitorFactory.buildInstance(XMLConfig.get(fsNode, "@class"));
             fileSystemMonitor.init(fsNode);
             
             logger.info("AnalyzeDirCall " + name + " configured");
@@ -119,7 +122,17 @@ public class AnalyzeDirCall implements CallOperation
             else {
                 logger.debug("AnalyzeDirCall " + name + " create an XML report of directory ["
                         + report.getAnalysisDirectory() + "]");
-                gvBuffer.setObject(report.toXML());
+               
+                switch (outputFormat) {
+                case "JSON":
+                    gvBuffer.setObject(report.toJSON());
+                    break;
+
+                default:
+                    gvBuffer.setObject(report.toXML());
+                    break;
+                }
+                
                 gvBuffer.setProperty("GVFSM_REPORT_CREATED", "true");
                 if (report.getExistingFilesCount() != -1) {
                     gvBuffer.setProperty("GVFSM_EXISTING_FILES", "" + report.getExistingFilesCount());
