@@ -75,7 +75,7 @@
     		<groupId>org.eclipse.birt.runtime</groupId>
     		<artifactId>org.eclipse.birt.runtime</artifactId>
     		<version>3.7.2.v20120214-1408</version>
-    		<scope>provided</scope>
+    		<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -96,7 +96,11 @@
 					<groupId>commons-logging</groupId>
 					<artifactId>commons-logging</artifactId>
 				</exclusion>
-      		</exclusions> 
+        		<exclusion>
+        			<groupId>javax.mail</groupId>
+        			<artifactId>mail</artifactId>
+        		</exclusion>
+			</exclusions> 
 		</dependency>
 
 		<!-- *************** TEST *************** -->
@@ -138,6 +142,7 @@
 							it.greenvulcano.gvesb.internal.data,
 							it.greenvulcano.gvesb.virtual,
 							it.greenvulcano.util,
+							it.greenvulcano.util.metadata,
 							javax.servlet.http,
 							org.osgi.framework,
 							org.slf4j,
