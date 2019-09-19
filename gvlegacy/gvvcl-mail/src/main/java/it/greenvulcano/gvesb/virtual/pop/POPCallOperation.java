@@ -58,40 +58,36 @@ import it.greenvulcano.util.xml.XMLUtils;
  *
  *
  */
-public class POPCallOperation extends BaseReceiveMailOperation
-{
+public class POPCallOperation extends BaseReceiveMailOperation {
 
-    private static final Logger logger          = LoggerFactory.getLogger(POPCallOperation.class);
-    
-    private String              cacheKey        = null;
+    private static final Logger logger = LoggerFactory.getLogger(POPCallOperation.class);
+
+    private String cacheKey = null;
 
     /**
      *
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */
-    public void init(Node node) throws InitializationException
-    {
+    public void init(Node node) throws InitializationException {
+
         try {
             preInit(node);
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             logger.error("Error initializing POP call operation", exc);
-            throw new InitializationException("GVVCL_POP_INIT_ERROR", new String[][]{{"node", node.getLocalName()}},
-                    exc);
+            throw new InitializationException("GVVCL_POP_INIT_ERROR", new String[][] { { "node", node.getLocalName() } }, exc);
         }
     }
 
     /**
      * Return the protocol
      * 
-     * @return String 
-     * 			the protocol
+     * @return String
+     * the protocol
      */
     @Override
-    protected String getProtocol() {    	   	
-        return  Optional.ofNullable(serverProps)
-                        .orElseGet(Properties::new)
-                        .getProperty("mail.store.protocol", "pop3");
+    protected String getProtocol() {
+
+        return Optional.ofNullable(serverProps).orElseGet(Properties::new).getProperty("mail.store.protocol", "pop3");
     }
 
     /**
@@ -99,6 +95,7 @@ public class POPCallOperation extends BaseReceiveMailOperation
      */
     @Override
     protected void postStore(Store locStore, GVBuffer data) throws Exception {
+
         cacheKey = null;
         if (!dynamicServer) {
             cacheKey = jndiName;
@@ -107,25 +104,16 @@ public class POPCallOperation extends BaseReceiveMailOperation
 
         cacheKey = serverHost + "_" + loginUser;
     }
-    
+
     /**
      * Receives e-mails.
      *
      * @param data
-     *        the input GVBuffer.
+     * the input GVBuffer.
      * @return the GVBuffer.
      * @throws Exception
      */
-    protected GVBuffer receiveMails(GVBuffer data) throws Exception
-    {
-        Store localStore = getStore(data);
-        if (performLogin) {
-        	
-            localStore.connect(serverHost, loginUser, loginPassword);
-        }
-        else {
-            localStore.connect();
-        }
+    protected GVBuffer receiveMails(Store localStore, GVBuffer data) throws Exception {
 
         XMLUtils xml = null;
         try {
@@ -143,8 +131,7 @@ public class POPCallOperation extends BaseReceiveMailOperation
 
             try {
                 folder.open(Folder.READ_WRITE);
-            }
-            catch (MessagingException ex) {
+            } catch (MessagingException ex) {
                 folder.open(Folder.READ_ONLY);
             }
             int totalMessages = folder.getMessageCount();
@@ -152,8 +139,7 @@ public class POPCallOperation extends BaseReceiveMailOperation
 
             if (totalMessages == 0) {
                 logger.debug("Empty folder " + mbox);
-            }
-            else {
+            } else {
                 List<Message> seen = new ArrayList<Message>();
                 Message[] msgs = folder.getMessages();
                 FetchProfile fp = new FetchProfile();
@@ -161,7 +147,7 @@ public class POPCallOperation extends BaseReceiveMailOperation
                 fp.add(UIDFolder.FetchProfileItem.UID);
                 fp.add("X-Mailer");
                 folder.fetch(msgs, fp);
-                
+
                 UIDCache uidCache = UIDCacheManagerFactory.getInstance().getUIDCache(cacheKey);
 
                 xml = XMLUtils.getParserInstance();
@@ -176,8 +162,7 @@ public class POPCallOperation extends BaseReceiveMailOperation
                             if (uid != null) {
                                 if (uidCache.contains(uid)) {
                                     skipMessage = true;
-                                }
-                                else {
+                                } else {
                                     uidCache.add(uid);
                                 }
                             }
@@ -190,10 +175,10 @@ public class POPCallOperation extends BaseReceiveMailOperation
                         if (exportEML) {
                             Element eml = xml.insertElement(msg, "EML");
                             xml.setAttribute(eml, "encoding", "base64");
-                            
+
                             ByteArrayOutputStream os = new ByteArrayOutputStream();
                             msgs[i].writeTo(os);
-                            
+
                             xml.insertText(eml, Base64.getEncoder().encodeToString(os.toByteArray()));
                             os.flush();
                             os.close();
@@ -215,12 +200,8 @@ public class POPCallOperation extends BaseReceiveMailOperation
             data.setRetCode(0);
             data.setProperty("POP_MESSAGE_COUNT", String.valueOf(messageCount));
             folder.close(expunge);
-        }
-        finally {
+        } finally {
             XMLUtils.releaseParserInstance(xml);
-            if (localStore != null) {
-                localStore.close();
-            }
         }
 
         return data;

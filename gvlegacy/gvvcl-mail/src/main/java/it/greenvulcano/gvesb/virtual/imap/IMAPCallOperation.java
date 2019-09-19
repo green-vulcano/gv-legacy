@@ -62,60 +62,57 @@ import it.greenvulcano.util.xml.XMLUtils;
  *
  *
  */
-public class IMAPCallOperation extends BaseReceiveMailOperation
-{
+public class IMAPCallOperation extends BaseReceiveMailOperation {
 
-    private static final Logger logger        = LoggerFactory.getLogger(IMAPCallOperation.class);
-   
-    private String              sortField     = null;
-    private boolean             sortAscending = false;
-    private List<SortTerm>      sortingTerms  = new ArrayList<SortTerm>();
-    
+    private static final Logger logger = LoggerFactory.getLogger(IMAPCallOperation.class);
+
+    private String sortField = null;
+    private boolean sortAscending = false;
+    private List<SortTerm> sortingTerms = new ArrayList<SortTerm>();
+
     /**
      * Invoked from <code>OperationFactory</code> when an <code>Operation</code>
      * needs initialization.<br>
      *
      * @param node
-     * 			The configuration node containing all informations.
+     * The configuration node containing all informations.
      *
      * @see it.greenvulcano.gvesb.virtual.Operation#init(org.w3c.dom.Node)
      */
-    public void init(Node node) throws InitializationException
-    {
+    public void init(Node node) throws InitializationException {
+
         try {
             preInit(node);
 
             sortField = XMLConfig.get(node, "@sort-field", "");
-            //logger.info("---@sort-field: " + sortField);
+            // logger.info("---@sort-field: " + sortField);
 
             sortAscending = XMLConfig.getBoolean(node, "@sort-ascending", false);
 
             if (!sortAscending) {
                 sortingTerms.add(SortTerm.REVERSE);
             }
-            if (sortField.equals("CC")){
+            if (sortField.equals("CC")) {
                 sortingTerms.add(SortTerm.CC);
-            } else if (sortField.equals("DATE")){
+            } else if (sortField.equals("DATE")) {
                 sortingTerms.add(SortTerm.DATE);
-            } else if (sortField.equals("FROM")){
+            } else if (sortField.equals("FROM")) {
                 sortingTerms.add(SortTerm.FROM);
-            } else if (sortField.equals("SIZE")){
+            } else if (sortField.equals("SIZE")) {
                 sortingTerms.add(SortTerm.SIZE);
-            } else if (sortField.equals("SUBJECT")){
+            } else if (sortField.equals("SUBJECT")) {
                 sortingTerms.add(SortTerm.SUBJECT);
-            } else if (sortField.equals("TO")){
+            } else if (sortField.equals("TO")) {
                 sortingTerms.add(SortTerm.TO);
             } else {
-                //The default value
+                // The default value
                 sortingTerms.add(SortTerm.ARRIVAL);
             }
-            
-            //logger.info("sortingTerms: " + sortingTerms.toString());
-        }
-        catch (Exception exc) {
+
+            // logger.info("sortingTerms: " + sortingTerms.toString());
+        } catch (Exception exc) {
             logger.error("Error initializing IMAP call operation", exc);
-            throw new InitializationException("GVVCL_IMAP_INIT_ERROR", new String[][]{{"node", node.getLocalName()}},
-                    exc);
+            throw new InitializationException("GVVCL_IMAP_INIT_ERROR", new String[][] { { "node", node.getLocalName() } }, exc);
         }
     }
 
@@ -126,11 +123,10 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
      */
     @Override
     protected String getProtocol() {
-        return Optional.ofNullable(serverProps)
-                .orElseGet(Properties::new)
-                .getProperty("mail.store.protocol", "imap");
+
+        return Optional.ofNullable(serverProps).orElseGet(Properties::new).getProperty("mail.store.protocol", "imap");
     }
-    
+
     /**
      * 
      * @param locStore
@@ -138,40 +134,33 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
      */
     @Override
     protected void postStore(Store locStore, GVBuffer data) throws Exception {
+
         // do nothing
     }
-    
+
     /**
      * Receives e-mails.
      *
      * @param data
-     *        the input GVBuffer.
+     * the input GVBuffer.
      * @return the GVBuffer.
      * @throws Exception
      * @throws Exception
      * 
      */
-    protected GVBuffer receiveMails(GVBuffer data) throws Exception
-    {
-        Store localStore = getStore(data);
-        if (performLogin) {
-            localStore.connect(serverHost, loginUser, loginPassword);
-        }
-        else {
-            localStore.connect();
-        }
+    protected GVBuffer receiveMails(Store localStore, GVBuffer data) throws Exception {
 
         boolean sortable = false;
-        if (localStore instanceof IMAPStore){
-            //Test if sortable store
-            if (((IMAPStore) localStore).hasCapability("SORT")){
+        if (localStore instanceof IMAPStore) {
+            // Test if sortable store
+            if (((IMAPStore) localStore).hasCapability("SORT")) {
                 sortable = true;
             } else {
                 logger.debug("UNSORTABLE Store");
             }
         } else {
-            //Store is NOT sortable
-            //sortable = false;
+            // Store is NOT sortable
+            // sortable = false;
             logger.debug("UNSORTABLE Store");
         }
         XMLUtils xml = null;
@@ -190,8 +179,7 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
 
             try {
                 folder.open(Folder.READ_WRITE);
-            }
-            catch (MessagingException ex) {
+            } catch (MessagingException ex) {
                 folder.open(Folder.READ_ONLY);
             }
             int totalMessages = folder.getMessageCount();
@@ -199,26 +187,25 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
 
             if (totalMessages == 0) {
                 logger.debug("Empty folder " + mbox);
-            }
-            else {
+            } else {
                 List<Message> seen = new ArrayList<Message>();
                 Message[] msgs;
                 Flags f = new Flags();
                 f.add(Flag.SEEN);
-                if (sortable){
+                if (sortable) {
                     SearchTerm onlyUnread = new FlagTerm(new Flags(f), false);
                     SortTerm[] terms = sortingTerms.toArray(new SortTerm[sortingTerms.size()]);
-                    msgs = ((IMAPFolder)folder).getSortedMessages(terms, onlyUnread);
+                    msgs = ((IMAPFolder) folder).getSortedMessages(terms, onlyUnread);
                 } else {
                     msgs = folder.search(new FlagTerm(f, false));
                 }
-                
+
                 FetchProfile fp = new FetchProfile();
                 fp.add(FetchProfile.Item.ENVELOPE);
                 fp.add(UIDFolder.FetchProfileItem.UID);
                 fp.add("X-Mailer");
                 folder.fetch(msgs, fp);
-                
+
                 xml = XMLUtils.getParserInstance();
                 Document doc = xml.newDocument("MailMessages");
                 for (int i = 0; i < msgs.length; i++) {
@@ -231,14 +218,14 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
                         Element eml = xml.insertElement(msg, "EML");
                         xml.setAttribute(eml, "encoding", "base64");
                         ByteArrayOutputStream os = new ByteArrayOutputStream();
-                        
+
                         msgs[i].writeTo(os);
-                        
+
                         xml.insertText(eml, Base64.getEncoder().encodeToString(os.toByteArray()));
                         os.flush();
                         os.close();
                     }
-                    
+
                     msgs[i].setFlag(Flags.Flag.SEEN, true);
                     seen.add(msgs[i]);
                     messageCount++;
@@ -254,12 +241,8 @@ public class IMAPCallOperation extends BaseReceiveMailOperation
             data.setRetCode(0);
             data.setProperty("IMAP_MESSAGE_COUNT", String.valueOf(messageCount));
             folder.close(expunge);
-        }
-        finally {
+        } finally {
             XMLUtils.releaseParserInstance(xml);
-            if (localStore != null) {
-                localStore.close();
-            }
         }
 
         return data;

@@ -30,9 +30,11 @@ import java.util.regex.Pattern;
 
 import javax.activation.DataHandler;
 import javax.mail.Address;
+import javax.mail.Folder;
 import javax.mail.Header;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
+import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.Session;
@@ -55,36 +57,38 @@ import it.greenvulcano.util.xml.XMLUtils;
 
 public abstract class BaseReceiveMailOperation extends BaseMailOperation {
 
-    private static final Logger logger          = LoggerFactory.getLogger(BaseReceiveMailOperation.class);
+    private static final Logger logger = LoggerFactory.getLogger(BaseReceiveMailOperation.class);
 
-    protected String            loginUser       = null;
-    protected String            loginPassword   = null;
-    protected String            serverHost      = null;
+    protected String loginUser = null;
+    protected String loginPassword = null;
+    protected String serverHost = null;
 
-    protected String            mbox            = "INBOX";
-    protected boolean           delete_messages = false;
-    protected boolean           expunge         = false;
-    protected boolean           exportEML       = false;
-    protected Store             store           = null;
-    
+    protected String mbox = "INBOX";
+    protected boolean delete_messages = false;
+    protected boolean expunge = false;
+    protected boolean exportEML = false;
+    protected boolean validateOnly = false;
+    protected Store store = null;
+
     /**
      * The emails cleaner pattern
      */
-    protected Pattern           emailRxPattern  = null;
-    protected int               maxReadMessages = -1;
+    protected Pattern emailRxPattern = null;
+    protected int maxReadMessages = -1;
 
     /**
      * Preliminary initialization operations
      * 
-     * @param node 
-     * 			The configuration node containing all informations.
-     * @return Session 
-     * 			The session 
+     * @param node
+     * The configuration node containing all informations.
+     * @return Session
+     * The session
      * 
      */
     protected Session preInit(Node node) throws InitializationException {
+
         try {
-        	
+
             mbox = XMLConfig.get(node, "@folder", "INBOX");
             logger.debug("Messages folder: " + mbox);
 
@@ -92,7 +96,7 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
             expunge = XMLConfig.getBoolean(node, "@expunge", false);
 
             exportEML = XMLConfig.getBoolean(node, "@export-EML", false);
-            
+
             maxReadMessages = XMLConfig.getInteger(node, "@max-read-messages", 10);
 
             String regex = XMLConfig.get(node, "@email-rx-cleaner", "[A-z][A-z0-9_\\-]*([.][A-z0-9_\\-]+)*[@][A-z0-9_\\-]+([.][A-z0-9_\\-]+)*[.][A-z]{2,4}");
@@ -105,58 +109,92 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
             }
 
             return session;
-        }
-        catch (Exception exc) {
-            logger.error("Error initializing IMAP call operation", exc);
-            throw new InitializationException("GVVCL_RCV_MAIL_INIT_ERROR", new String[][]{{"node", node.getLocalName()}},
-                    exc);
+        } catch (Exception exc) {
+            logger.error("Error initializing call operation", exc);
+            throw new InitializationException("GVVCL_RCV_MAIL_INIT_ERROR", new String[][] { { "node", node.getLocalName() } }, exc);
         }
     }
 
     /**
      * Abstract method for retrieve the protocol
      * 
-     * @return String  
-     * 			The protocol 
+     * @return String
+     * The protocol
      */
     protected abstract String getProtocol();
 
     /**
      * 
-     * @param gvBuffer 
-     * 			The GVBuffer to be used within the service
+     * @param gvBuffer
+     * The GVBuffer to be used within the service
      * @return the GVBuffer
      * 
      * @see it.greenvulcano.gvesb.virtual.CallOperation#perform(it.greenvulcano.gvesb.buffer.GVBuffer)
      */
-    public GVBuffer perform(GVBuffer gvBuffer) throws ConnectionException, CallException, InvalidDataException
-    {
-        try {
-            return receiveMails(gvBuffer);
-        }
-        catch (Exception exc) {
+    public GVBuffer perform(GVBuffer gvBuffer) throws ConnectionException, CallException, InvalidDataException {
+
+        Store localStore = null;
+        try  {
+
+            localStore = getStore(gvBuffer);
+            if (performLogin) {
+                localStore.connect(serverHost, loginUser, loginPassword);
+            } else {
+                localStore.connect();
+            }
+
+            if (validateOnly || Boolean.valueOf(gvBuffer.getProperty("VALIDATE_MAIL_PROPERTIES"))) {
+
+                Folder folder = localStore.getDefaultFolder();
+                if (folder == null) {
+                    logger.error("No default folder");
+                    throw new Exception("No default folder");
+                }
+                
+                folder = folder.getFolder(mbox);
+                if (folder == null) {
+                    logger.error("Invalid folder " + mbox);
+                    throw new Exception("Invalid folder " + mbox);
+                }
+
+                return gvBuffer;
+            }
+
+            return receiveMails(localStore, gvBuffer);
+        } catch (Exception exc) {
             throw new CallException("GV_CALL_SERVICE_ERROR",
-                    new String[][]{{"service", gvBuffer.getService()}, {"system", gvBuffer.getSystem()},
-                            {"id", gvBuffer.getId().toString()}, {"message", exc.getMessage()}}, exc);
+                                    new String[][] { { "service", gvBuffer.getService() },
+                                                     { "system", gvBuffer.getSystem() },
+                                                     { "id", gvBuffer.getId().toString() },
+                                                     { "message", exc.getMessage() } },
+                                    exc);
+        } finally {
+            if (localStore != null) {
+                try {
+                    localStore.close();
+                } catch (MessagingException e) {
+                    logger.error("Error closing mail Store", e);
+                }
+            }
         }
     }
 
     /**
      * Abstract method for receiving mails
      * 
-     * @param data 
-     * 			The GVBuffer to be used within the service
+     * @param data
+     * The GVBuffer to be used within the service
      * @return the GVBuffer
      * @throws Exception
      */
-    protected abstract GVBuffer receiveMails(GVBuffer data) throws Exception;
+    protected abstract GVBuffer receiveMails(Store locStore, GVBuffer data) throws Exception;
 
     /**
      * 
      * @param locStore
-     * 			javax.mail.Store
+     * javax.mail.Store
      * @param data
-     * 			the GVBuffer
+     * the GVBuffer
      * @throws Exception
      */
     protected abstract void postStore(Store locStore, GVBuffer data) throws Exception;
@@ -169,15 +207,15 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
      * @throws Exception
      */
     protected Store getStore(GVBuffer data) throws Exception {
-        
+
         if (!dynamicServer) {
             postStore(store, data);
             return store;
         }
-        
-        loginUser     = null;
+
+        loginUser = null;
         loginPassword = null;
-        serverHost    = null;
+        serverHost = null;
 
         try {
             PropertiesHandler.enableExceptionOnErrors();
@@ -190,14 +228,12 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
                 if (name.contains(".host")) {
                     logger.debug("Logging-in to host: " + value);
                     serverHost = value;
-                }
-                else if (name.contains(".user")) {
+                } else if (name.contains(".user")) {
                     logger.debug("Logging-in as user: " + value);
                     loginUser = value;
-                }
-                else if (name.contains(".password")) {
+                } else if (name.contains(".password")) {
                     value = XMLConfig.getDecrypted(value);
-                    
+
                     loginPassword = value;
                 }
                 localProps.setProperty(name, value);
@@ -206,7 +242,7 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
             Session session = Session.getInstance(localProps, null);
 
             if (session == null) {
-                throw new CallException("GVVCL_RCV_MAIL_NO_SESSION", new String[][]{{"properties", "" + localProps}});
+                throw new CallException("GVVCL_RCV_MAIL_NO_SESSION", new String[][] { { "properties", "" + localProps } });
             }
 
             Store locStore = session.getStore(getProtocol());
@@ -214,14 +250,11 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
             postStore(locStore, data);
 
             return locStore;
-        }
-        catch (CallException exc) {
+        } catch (CallException exc) {
             throw exc;
-        }
-        catch (Exception exc) {
-            throw new CallException("GVVCL_RCV_MAIL_SESSION_ERROR", new String[][]{{"message", exc.getMessage()}}, exc);
-        }
-        finally {
+        } catch (Exception exc) {
+            throw new CallException("GVVCL_RCV_MAIL_SESSION_ERROR", new String[][] { { "message", exc.getMessage() } }, exc);
+        } finally {
             PropertiesHandler.disableExceptionOnErrors();
         }
     }
@@ -234,8 +267,8 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
      * @param xml
      * @throws Exception
      */
-    protected void dumpPart(Part p, Element msg, XMLUtils xml) throws Exception
-    {
+    protected void dumpPart(Part p, Element msg, XMLUtils xml) throws Exception {
+
         if (p instanceof Message) {
             dumpEnvelope((Message) p, msg, xml);
         }
@@ -245,28 +278,24 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
         if (p.isMimeType("text/plain") && (filename == null)) {
             content = xml.insertElement(msg, "PlainMessage");
             xml.insertText(content, (String) p.getContent());
-        }
-        else if (p.isMimeType("text/html") && (filename == null)) {
+        } else if (p.isMimeType("text/html") && (filename == null)) {
             content = xml.insertElement(msg, "HTMLMessage");
             xml.insertCDATA(content, (String) p.getContent());
-        }
-        else if (p.isMimeType("multipart/*")) {
+        } else if (p.isMimeType("multipart/*")) {
             Multipart mp = (Multipart) p.getContent();
             int count = mp.getCount();
             content = xml.insertElement(msg, "Multipart");
             for (int i = 0; i < count; i++) {
                 dumpPart(mp.getBodyPart(i), content, xml);
             }
-        }
-        else if (p.isMimeType("message/rfc822")) {
+        } else if (p.isMimeType("message/rfc822")) {
             content = xml.insertElement(msg, "NestedMessage");
             dumpPart((Part) p.getContent(), content, xml);
-        }
-        else {
+        } else {
             content = xml.insertElement(msg, "EncodedContent");
             DataHandler dh = p.getDataHandler();
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            
+
             dh.writeTo(os);
             xml.insertText(content, Base64.getEncoder().encodeToString(os.toByteArray()));
             os.flush();
@@ -294,8 +323,8 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
      * @param xml
      * @throws Exception
      */
-    private void dumpEnvelope(Message m, Element msg, XMLUtils xml) throws Exception
-    {
+    private void dumpEnvelope(Message m, Element msg, XMLUtils xml) throws Exception {
+
         dumpSR(m.getFrom(), msg, "From", xml);
         dumpSR(m.getRecipients(RecipientType.TO), msg, "To", xml);
         dumpSR(m.getRecipients(RecipientType.CC), msg, "Cc", xml);
@@ -320,8 +349,8 @@ public abstract class BaseReceiveMailOperation extends BaseMailOperation {
      * @param xml
      * @throws Exception
      */
-    private void dumpSR(Address[] addr, Element msg, String container, XMLUtils xml) throws Exception
-    {
+    private void dumpSR(Address[] addr, Element msg, String container, XMLUtils xml) throws Exception {
+
         Element cont = xml.insertElement(msg, container);
         Matcher mtc = emailRxPattern.matcher("");
 

@@ -25,40 +25,44 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.greenvulcano.gvesb.virtual.OperationFactory;
+import it.greenvulcano.gvesb.virtual.commons.ValidateMailboxOperation;
 import it.greenvulcano.gvesb.virtual.imap.IMAPCallOperation;
 import it.greenvulcano.gvesb.virtual.pop.POPCallOperation;
 
-
 /*
- * @version 4.0.0 - Feb 2017
+ * @version 4.0.1 - Sep 2019
  * @author GreenVulcano Developer Team
  */
 public class Activator implements BundleActivator {
-	
-	private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
 
-	/**
-	 * 
-	 * @param context 
-	 * 			The execution context of the bundle being started.
-	 */
+    private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
+
+    /**
+     * 
+     * @param context
+     * The execution context of the bundle being started.
+     */
     public void start(BundleContext context) throws Exception {
-    	OperationFactory.registerSupplier("smtp-call", SMTPCallOperation::new);
-    	OperationFactory.registerSupplier("pop-call", POPCallOperation::new);
-    	OperationFactory.registerSupplier("imap-call", IMAPCallOperation::new);
-		LOG.debug("*********** GV VCL Mail Up&Runnig");
+
+        OperationFactory.registerSupplier("smtp-call", SMTPCallOperation::new);
+        OperationFactory.registerSupplier("pop-call", POPCallOperation::new);
+        OperationFactory.registerSupplier("imap-call", IMAPCallOperation::new);
+        OperationFactory.registerSupplier("validate-mailbox-call", ValidateMailboxOperation::new);
+        LOG.debug("*********** GV VCL Mail Up&Runnig");
     }
 
     /**
      * 
      * @param context
-     * 			The execution context of the bundle being stopped.
+     * The execution context of the bundle being stopped.
      */
     public void stop(BundleContext context) throws Exception {
-    	OperationFactory.unregisterSupplier("smtp-call");
-    	OperationFactory.unregisterSupplier("pop-call");
-    	OperationFactory.unregisterSupplier("imap-call");
-		LOG.debug("*********** GV VCL Mail Stopped");
+
+        OperationFactory.unregisterSupplier("smtp-call");
+        OperationFactory.unregisterSupplier("pop-call");
+        OperationFactory.unregisterSupplier("imap-call");
+        OperationFactory.unregisterSupplier("validate-mailbox-call");
+        LOG.debug("*********** GV VCL Mail Stopped");
     }
 
 }
