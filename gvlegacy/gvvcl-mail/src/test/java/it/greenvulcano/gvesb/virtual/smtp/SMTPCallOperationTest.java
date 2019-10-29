@@ -20,6 +20,9 @@
 package it.greenvulcano.gvesb.virtual.smtp;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 import javax.mail.Message;
@@ -129,6 +132,16 @@ public class SMTPCallOperationTest extends TestCase {
         assertEquals(message, MimeMessageHelper.getCalendarBody(mimeMessage).getSummary());
         assertEquals("r.lagrotteria@greenvulcano.com", MimeMessageHelper.getCalendarBody(mimeMessage).getOrganizer());
 
+    }
+    
+    public void testReadCalendarEmail() throws UnsupportedEncodingException, IOException, MessagingException {
+        
+        byte[] email = Files.readAllBytes(Paths.get(getClass().getClassLoader().getResource("test-calendar-email.txt").getPath()));        
+        MimeMessage mimeMessage = MimeMessageHelper.decode(email);
+        
+        assertEquals("d.franco@eaisoftware.com", MimeMessageHelper.getCalendarBody(mimeMessage).getOrganizer());
+        
+        
     }
 
     /**

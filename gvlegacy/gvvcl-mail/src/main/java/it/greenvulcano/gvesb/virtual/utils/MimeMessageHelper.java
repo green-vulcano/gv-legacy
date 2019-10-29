@@ -65,7 +65,7 @@ import it.greenvulcano.util.txt.TextUtils;
 public class MimeMessageHelper {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(MimeMessageHelper.class);
-    
+
     private enum MessageType {
                               TEXT,
                               HTML,
@@ -77,12 +77,13 @@ public class MimeMessageHelper {
 
     private String messageBody = "";
     private MessageType messageType = MessageType.TEXT;
-    
+
     static {
         final MimetypesFileTypeMap mimetypes = (MimetypesFileTypeMap) MimetypesFileTypeMap.getDefaultFileTypeMap();
         mimetypes.addMimeTypes("text/calendar ics ICS");
         final MailcapCommandMap mailcap = (MailcapCommandMap) MailcapCommandMap.getDefaultCommandMap();
         mailcap.addMailcap("text/calendar;; x-java-content-handler=com.sun.mail.handlers.text_plain");
+        mailcap.addMailcap("application/ics;; x-java-content-handler=com.sun.mail.handlers.text_plain");
     }
 
     private MimeMessageHelper(MimeMessage mimeMessage) {
@@ -167,19 +168,35 @@ public class MimeMessageHelper {
     }
 
     public static CalendarBody getCalendarBody(MimeMessage message) {
+
         try {
-             return Optional.ofNullable(getMessageBody(message, "text/calendar"))
-                            .map(Body::getContent)
-                            .map(CalendarBody::new)
-                            .orElseThrow(IllegalArgumentException::new);
-                 
-        } catch (IllegalArgumentException e) {
-            LOGGER.warn("ICalendar content don't found");
+
+            if (message.getContent() instanceof Multipart) {
+
+                Multipart multipartMessage = (Multipart) message.getContent();
+                for (int i = 0; i < multipartMessage.getCount(); i++) {
+                    BodyPart bodyPart = multipartMessage.getBodyPart(i);
+
+                    if (bodyPart.isMimeType("text/calendar") || bodyPart.isMimeType("application/ics")) {
+                        return new CalendarBody(bodyPart.getContent().toString());
+                    }
+                }
+            } else {
+
+                String content = message.getContent().toString();
+
+                if (content.contains("BEGIN:VCALENDAR")) {
+                    return new CalendarBody(content);
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.warn("Failed to read email body of type text/calendar", e);
         }
-        
+
         return null;
     }
-    
+
     public static List<Attachment> getMessageAttachments(String message) {
 
         try {
@@ -323,7 +340,8 @@ public class MimeMessageHelper {
                                                           .append(CalendarBody.LOCATION)
                                                           .append(TextUtils.urlEncode(location))
                                                           .append("\n")
-                                                          .append(CalendarBody.ORGANIZER).append(":MAILTO:")
+                                                          .append(CalendarBody.ORGANIZER)
+                                                          .append(":MAILTO:")
                                                           .append(organizer)
                                                           .append("\n")
                                                           .append("END:VEVENT")
