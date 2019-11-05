@@ -79,6 +79,7 @@ public class MimeMessageHelper {
     private MessageType messageType = MessageType.TEXT;
 
     static {
+        System.setProperty("mail.mime.multipart.ignoreexistingboundaryparameter", "true");
         final MimetypesFileTypeMap mimetypes = (MimetypesFileTypeMap) MimetypesFileTypeMap.getDefaultFileTypeMap();
         mimetypes.addMimeTypes("text/calendar ics ICS");
         final MailcapCommandMap mailcap = (MailcapCommandMap) MailcapCommandMap.getDefaultCommandMap();
@@ -176,7 +177,7 @@ public class MimeMessageHelper {
                 Multipart multipartMessage = (Multipart) message.getContent();
                 for (int i = 0; i < multipartMessage.getCount(); i++) {
                     BodyPart bodyPart = multipartMessage.getBodyPart(i);
-
+                    
                     if (bodyPart.isMimeType("text/calendar") || bodyPart.isMimeType("application/ics")) {
                         return new CalendarBody(bodyPart.getContent().toString());
                     }

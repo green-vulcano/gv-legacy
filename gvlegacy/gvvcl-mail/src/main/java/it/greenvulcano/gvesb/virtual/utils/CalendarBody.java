@@ -13,42 +13,44 @@ public class CalendarBody {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(CalendarBody.class);
 
-    final static String DTSTART = "DTSTART:";
-    final static String DTEND = "DTEND:";
-    final static String SUMMARY = "SUMMARY:";
-    final static String DESCRIPTION = "DESCRIPTION:";
-    final static String LOCATION = "LOCATION:";
+    final static String DTSTART = "DTSTART";
+    final static String DTEND = "DTEND";
+    final static String SUMMARY = "SUMMAR:";
+    final static String DESCRIPTION = "DESCRIPTION";
+    final static String LOCATION = "LOCATION";
     final static String ORGANIZER = "ORGANIZER";
 
     private final String icalendarContent;
 
     public CalendarBody(String icalendarContent) {
-
         this.icalendarContent = icalendarContent;
     }
 
     public Date getEventStart() {
-
         return readDate(DTSTART);
     }
 
     public Date getEventEnd() {
-
         return readDate(DTEND);
+    }
+    
+    public String getEventStartTimestamp() {
+        return readString(DTSTART);
+    }
+
+    public String getEventEndTimestamp() {
+        return readString(DTEND);
     }
 
     public String getSummary() {
-
         return readString(SUMMARY);
     }
 
     public String getDescription() {
-
         return readString(DESCRIPTION);
     }
 
     public String getLocaltion() {
-
         return readString(LOCATION);
     }
 
@@ -93,23 +95,31 @@ public class CalendarBody {
 
     private String readString(String attribute) {
 
+        String attributeMatcher = String.format("^%s.*:.*$", attribute);
+        String splitPattern = String.format("%s.*:", attribute);
+        
         if (icalendarContent != null) {
-            Optional<String> stringAttribute = icalendarContent.lines()
-                                                               .collect(() -> new LinkedList<String>(), 
-                                                                        (set, line) -> {
-                                                                                            if (line.startsWith(" ")) {
-                                                                                                String fullLine = set.removeLast().concat(line.trim());
-                                                                                                set.add(fullLine);
-                                                                                            } else {
-                                                                                                set.add(line);
-                                                                                            }
+            
+            String event = icalendarContent.substring(icalendarContent.lastIndexOf("BEGIN:VEVENT"));
+            
+            Optional<String> stringAttribute = event.lines()
+                                                    .collect(() -> new LinkedList<String>(), 
+                                                            (set, line) -> {
+                                                                                if (line.startsWith(" ")) {
+                                                                                    String fullLine = set.removeLast().concat(line.trim());
+                                                                                    set.add(fullLine);
+                                                                                } else {
+                                                                                    set.add(line);
+                                                                                }
 
-                                                                                        }, 
-                                                                        (set1, set2) -> set1.addAll(set2))
-                                                               .stream()
-                                                               .filter(line -> line.startsWith(attribute))
-                                                               .map(attrib -> attrib.substring(attribute.length()))
-                                                               .findFirst();
+                                                                            }, 
+                                                            (set1, set2) -> set1.addAll(set2))
+                                                   .stream()
+                                                   .filter(line -> line.matches(attributeMatcher))
+                                                   .map(attrib -> attrib.split(splitPattern))
+                                                   .filter(results -> results.length>1)
+                                                   .map(results -> results[1])
+                                                   .findFirst();
 
             if (stringAttribute.isPresent()) {
                 return stringAttribute.get();
