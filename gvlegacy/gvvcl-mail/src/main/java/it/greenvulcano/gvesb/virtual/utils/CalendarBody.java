@@ -54,25 +54,8 @@ public class CalendarBody {
         return readString(LOCATION);
     }
 
-    public String getOrganizer() {
-
-        String organizer = readString(ORGANIZER);
-        if (organizer != null) {
-            // Support forms:
-            // ORGANIZER:mailto:*
-            // ORGANIZER;mailto:
-            String[] organizerParts = organizer.toLowerCase().split(";");
-
-            for (String part : organizerParts) {
-                int p = part.lastIndexOf("mailto:");
-                if (p>0) {
-                    return part.substring(p+"mailto:".length());
-                }
-            }
-
-        }
-
-        return null;
+    public String getOrganizer() {                
+        return readString(ORGANIZER);
     }
    
     private Date readDate(String attribute) {
