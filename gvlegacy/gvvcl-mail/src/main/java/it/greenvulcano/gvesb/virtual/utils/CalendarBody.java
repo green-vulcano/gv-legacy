@@ -15,7 +15,8 @@ public class CalendarBody {
 
     final static String DTSTART = "DTSTART";
     final static String DTEND = "DTEND";
-    final static String SUMMARY = "SUMMAR:";
+    final static String STATUS = "STATUS";
+    final static String SUMMARY = "SUMMARY";
     final static String DESCRIPTION = "DESCRIPTION";
     final static String LOCATION = "LOCATION";
     final static String ORGANIZER = "ORGANIZER";
@@ -35,11 +36,11 @@ public class CalendarBody {
     }
     
     public String getEventStartTimestamp() {
-        return readString(DTSTART);
+        return DateUtils.dateToString(getEventStart(), DateUtils.FORMAT_ISO8601_DATETIME);
     }
 
     public String getEventEndTimestamp() {
-        return readString(DTEND);
+        return DateUtils.dateToString(getEventEnd(), DateUtils.FORMAT_ISO8601_DATETIME);
     }
 
     public String getSummary() {
@@ -49,7 +50,11 @@ public class CalendarBody {
     public String getDescription() {
         return readString(DESCRIPTION);
     }
-
+    
+    public String getStatus() {
+        return readString(STATUS);
+    }
+    
     public String getLocaltion() {
         return readString(LOCATION);
     }
