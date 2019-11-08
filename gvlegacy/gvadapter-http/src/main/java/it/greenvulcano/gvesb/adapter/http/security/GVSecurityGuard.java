@@ -40,6 +40,8 @@ import it.greenvulcano.gvesb.iam.exception.UserExpiredException;
 import it.greenvulcano.gvesb.iam.exception.UserNotFoundException;
 import it.greenvulcano.gvesb.iam.modules.Identity;
 import it.greenvulcano.gvesb.iam.modules.SecurityModule;
+import it.greenvulcano.gvesb.identity.GVIdentityHelper;
+import it.greenvulcano.gvesb.identity.IdentityInfo;
 
 public class GVSecurityGuard {
 
@@ -78,6 +80,11 @@ public class GVSecurityGuard {
                     if (identity.isPresent()) {
                         request.setAttribute(Identity.class.getName(), identity.get());
                         LOG.debug("User authenticated: " + identity.get().getName());
+                        
+                        // Create and insert the caller in the security context
+                        IdentityInfo identityInfo = new GVSecurityIdentityInfo(request, identity.get());                                        
+                        GVIdentityHelper.push(identityInfo);
+                        
                         break;
                     }
                     
