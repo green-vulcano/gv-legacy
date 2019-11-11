@@ -40,6 +40,7 @@ import it.greenvulcano.gvesb.core.pool.GreenVulcanoPoolManager;
 import it.greenvulcano.gvesb.log.GVBufferMDC;
 import it.greenvulcano.gvesb.log.GVFormatLog;
 import it.greenvulcano.gvesb.policy.ACLManager;
+import it.greenvulcano.gvesb.policy.ResourceKey;
 import it.greenvulcano.gvesb.policy.impl.GVCoreServiceKey;
 import it.greenvulcano.log.NMDC;
 import it.greenvulcano.util.xml.XMLUtils;
@@ -318,8 +319,12 @@ public class RESTHttpServletMapping implements HttpServletMapping {
             NMDC.setOperation(operationType);
             logger.info(GVFormatLog.formatBEGINOperation(request).toString());
             
-            if (ACLManager.requiresAuthentication(new GVCoreServiceKey(null, request.getService(), operationType))) {
+            ResourceKey resource = new GVCoreServiceKey(null, request.getService(), operationType);
+            if (ACLManager.requiresAuthentication(resource)) {
+                logger.debug("Perfroming required auhtentication for resource {} ", resource);
                 GVSecurityGuard.authenticate(req, resp);
+            } else {
+                logger.debug("Auhtentication not required for resource {} ", resource);
             }
 
             transactionManager.begin(request.getService(), operationType);
