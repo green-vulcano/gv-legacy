@@ -16,10 +16,10 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>it.greenvulcano.gvesb</groupId>
-		<artifactId>gvlegacy</artifactId>
-		<version>4.0.1</version>
-	</parent>
+        <artifactId>gvlegacy</artifactId>
+        <groupId>it.greenvulcano.gvesb</groupId>
+        <version>4.1.0-SNAPSHOT</version>
+    </parent>
 
 	<groupId>it.greenvulcano.gvesb.adapter</groupId>
 	<artifactId>gvvcl-file</artifactId>
@@ -84,7 +84,7 @@
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
-			<version>20160810</version>
+			<version>20190722</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>

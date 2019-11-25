@@ -19,7 +19,7 @@
 	<parent>
 		<artifactId>gvlegacy</artifactId>
 		<groupId>it.greenvulcano.gvesb</groupId>
-		<version>4.0.1</version>
+		<version>4.1.0-SNAPSHOT</version>
 	</parent>
 
 	<groupId>it.greenvulcano.gvesb.adapter</groupId>
@@ -27,10 +27,6 @@
 	<packaging>bundle</packaging>
 
 	<name>GreenVulcano VCL Mail Adapter</name>
-
-	<description>
-        gvvcl-mail OSGi bundle project.
-    </description>
 
 	<repositories>
 		<repository>
@@ -73,20 +69,7 @@
 			<version>${gvesb.version}</version>
 			<type>bundle</type>
 			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>javax.mail</groupId>
-			<artifactId>mail</artifactId>
-			<version>1.4.4</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.mail</groupId>
-			<artifactId>imap</artifactId>
-			<version>1.5.6</version>
-			<scope>provided</scope>
-		</dependency>
+		</dependency>	
 		<dependency>
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
@@ -99,6 +82,19 @@
 			<version>2.4</version>
 			<scope>provided</scope>
 		</dependency>
+		
+		<dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>1.6.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>imap</artifactId>
+            <version>1.6.3</version>
+            <scope>compile</scope>
+        </dependency>
 
 		<!-- *************** TEST *************** -->
 		<dependency>
@@ -178,9 +174,28 @@
 						<Export-Package>
 							it.greenvulcano.gvesb.virtual.utils;version=${project.version}
 						</Export-Package>
-						<Import-Package>
-							*
+						<Import-Package>							
+							it.greenvulcano.configuration;version="[4.0,5)",
+							it.greenvulcano.gvesb.buffer;version="[4.0,5)",
+							it.greenvulcano.gvesb.internal.data;version="[4.0,5)",
+							it.greenvulcano.gvesb.j2ee;version="[4.0,5)",
+							it.greenvulcano.gvesb.log;version="[4.0,5)",
+							it.greenvulcano.gvesb.utils;version="[4.0,5)",
+							it.greenvulcano.gvesb.virtual;version="[4.0,5)",
+							it.greenvulcano.util.metadata;version="[4.0,5)",
+							it.greenvulcano.util.txt;version="[4.0,5)",
+							it.greenvulcano.util.xml;version="[4.0,5)",
+							javax.naming,
+							javax.net,
+							javax.net.ssl,
+							org.apache.commons.codec.binary;version="[1.6,2)",
+							org.apache.commons.io;version="[1.4,2)",
+							org.osgi.framework;version="[1.7,2)",
+							org.slf4j;version="[1.7,2)",
+							org.w3c.dom
 						</Import-Package>
+						<Embed-Dependency>*;scope=compile;type=jar</Embed-Dependency>
+						<Embed-Transitive>true</Embed-Transitive>
 					</instructions>
 				</configuration>
 			</plugin>

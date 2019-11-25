@@ -28,6 +28,7 @@ import it.greenvulcano.util.remotefs.RemoteManager;
 import it.greenvulcano.util.remotefs.RemoteManagerException;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -57,8 +58,7 @@ public abstract class SSHManager extends RemoteManager {
 	private String privateKey;
 
 	private String passphrase;
-
-	private String publicKey;
+	
 
 	/**
 	 * @see it.greenvulcano.util.remotefs.RemoteManager#init(org.w3c.dom.Node)
@@ -79,14 +79,12 @@ public abstract class SSHManager extends RemoteManager {
 				throw new RemoteManagerException("Choosen 'password' authentication method but password not set.");
 			}
 			if (authMethod.equals("publicKey")) {
-				privateKey = XMLConfig.get(configNode, "IdentityInfo/@privateKey");
+				privateKey =  Optional.ofNullable(XMLConfig.get(configNode, "IdentityInfo/@privateKey")).orElseThrow(IllegalArgumentException::new);
 				passphrase = XMLConfig.getDecrypted(configNode, "IdentityInfo/@passphrase");
-				publicKey = XMLConfig.get(configNode, "IdentityInfo/@publicKey");
-				if ((privateKey == null) || (passphrase == null)) {
-					throw new RemoteManagerException(
-							"One of 'privateKey' or 'passphrase' attribute are missed from configuration.");
-				}
 			}
+		} catch (IllegalArgumentException e) {
+		    throw new RemoteManagerException(
+                            "Required parameter 'privateKey' or 'passphrase' missing from configuration.");
 		} catch (XMLConfigException exc) {
 			throw new RemoteManagerException("Initialization error", exc);
 		} catch (PropertiesHandlerException exc) {
@@ -162,10 +160,14 @@ public abstract class SSHManager extends RemoteManager {
 				session.setPassword(localPassword);
 			} else {
 				
-				String localPublicKey = PropertiesHandler.expand(publicKey, localProps);
-				String localPassphrase = XMLConfig.getDecrypted(PropertiesHandler.expand(passphrase, localProps));
-
-				jsch.addIdentity(localPublicKey, localPassphrase.getBytes());
+				String localPrivateKey = PropertiesHandler.expand(privateKey, localProps);
+				
+				if (passphrase!=null) {				    
+				    String localPassphrase = XMLConfig.getDecrypted(PropertiesHandler.expand(passphrase, localProps));
+				    jsch.addIdentity(localPrivateKey, localPassphrase);
+				} else {
+				    jsch.addIdentity(localPrivateKey);
+				}
 				session = jsch.getSession(localUsername, localHostname, remotePort);
 			}
 

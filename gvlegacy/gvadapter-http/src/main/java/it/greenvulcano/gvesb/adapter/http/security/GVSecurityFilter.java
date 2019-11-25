@@ -21,12 +21,6 @@ import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.greenvulcano.gvesb.iam.exception.CredentialsExpiredException;
-import it.greenvulcano.gvesb.iam.exception.InvalidCredentialsException;
-import it.greenvulcano.gvesb.iam.exception.PasswordMissmatchException;
-import it.greenvulcano.gvesb.iam.exception.UserExpiredException;
-import it.greenvulcano.gvesb.iam.exception.UserNotFoundException;
-import it.greenvulcano.gvesb.iam.modules.Identity;
 import it.greenvulcano.gvesb.iam.modules.SecurityModule;
 
 public class GVSecurityFilter implements Filter {
@@ -71,49 +65,7 @@ public class GVSecurityFilter implements Filter {
 			servletResponse.addHeader("Access-Control-Expose-Headers", "Content-Type, Content-Range, X-Auth-Status");
 		}	
 		
-		String authorization = Optional.ofNullable(servletRequest.getHeader("Authorization")).orElse("");
-		if (securityModulesReferences!=null) {				
-			LOG.debug("SecurityManager found, handling authentication");
-			
-			String wwwAuthenticate = "unknown";
-			try {
-				Optional<String> xRequestedWith = Optional.ofNullable(servletRequest.getHeader("X-Requested-With"));
-				for (ServiceReference<SecurityModule> securityModuleRef :  securityModulesReferences) {
-					
-					SecurityModule securityModule = securityModuleRef.getBundle().getBundleContext().getService(securityModuleRef);
-					wwwAuthenticate = securityModule.getSchema() + " realm="+ securityModule.getRealm();
-					if (xRequestedWith.isPresent()) {
-						wwwAuthenticate = xRequestedWith.get() + "+" + wwwAuthenticate;
-					}
-					Optional<Identity> identity = securityModule.resolve(authorization);
-					
-					if (identity.isPresent()) {
-						
-						servletRequest.setAttribute(Identity.class.getName(), identity.get());
-								        		
-		        		LOG.debug("User authenticated: "+ identity.get().getName());
-		        		
-		        		break;
-					}				
-				}
-				
-				chain.doFilter(request, response);
-				
-			} catch (UserExpiredException|CredentialsExpiredException userExpiredException) {	        		
-        		servletResponse.setHeader("WWW-Authenticate", wwwAuthenticate);
-        		servletResponse.setHeader("X-Auth-Status", "Expired");
-				servletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-				
-			} catch (PasswordMissmatchException|UserNotFoundException|InvalidCredentialsException unauthorizedException){
-				LOG.warn("Failed to authenticate user", unauthorizedException);
-				servletResponse.setHeader("WWW-Authenticate", wwwAuthenticate);
-        		servletResponse.setHeader("X-Auth-Status", "Denied");
-				servletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);;
-        	} catch (Exception e) {
-        		LOG.warn("Authentication process failed", e);
-        		servletResponse.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-			}
-		}
+		chain.doFilter(servletRequest, servletResponse);
 
 	}
 

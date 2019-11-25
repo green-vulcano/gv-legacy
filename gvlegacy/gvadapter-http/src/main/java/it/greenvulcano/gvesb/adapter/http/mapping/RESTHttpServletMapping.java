@@ -27,6 +27,7 @@ import it.greenvulcano.gvesb.adapter.http.exc.GVRequestException;
 import it.greenvulcano.gvesb.adapter.http.exc.InboundHttpResponseException;
 import it.greenvulcano.gvesb.adapter.http.formatters.FormatterManager;
 import it.greenvulcano.gvesb.adapter.http.formatters.handlers.GVTransactionInfo;
+import it.greenvulcano.gvesb.adapter.http.security.GVSecurityGuard;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpConstants;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpExecutionException;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpInitializationException;
@@ -38,7 +39,9 @@ import it.greenvulcano.gvesb.core.pool.GreenVulcanoPool;
 import it.greenvulcano.gvesb.core.pool.GreenVulcanoPoolManager;
 import it.greenvulcano.gvesb.log.GVBufferMDC;
 import it.greenvulcano.gvesb.log.GVFormatLog;
-
+import it.greenvulcano.gvesb.policy.ACLManager;
+import it.greenvulcano.gvesb.policy.ResourceKey;
+import it.greenvulcano.gvesb.policy.impl.GVCoreServiceKey;
 import it.greenvulcano.log.NMDC;
 import it.greenvulcano.util.xml.XMLUtils;
 
@@ -73,23 +76,24 @@ import org.w3c.dom.NodeList;
 /**
  * RESTHttpServletMapping class
  * 
- * @version 3.5.0 July 20, 2014
+ * @version 4.1.0 October 23, 2019
  * @author GreenVulcano Developer Team
  * 
  * 
  */
-public class RESTHttpServletMapping implements HttpServletMapping
-{
-    private static Logger                 logger              = org.slf4j.LoggerFactory.getLogger(RESTHttpServletMapping.class);
+public class RESTHttpServletMapping implements HttpServletMapping {
 
-    private HttpServletTransactionManager transactionManager  = null;
-    private String                        action              = null;
-    private boolean                       dump                = false;
-    private String                        responseContentType = null;
-    private String                        responseCharacterEncoding = null;
-    private List<PatternResolver>         operationMappings   = new ArrayList<PatternResolver>();
+    private static Logger logger = org.slf4j.LoggerFactory.getLogger(RESTHttpServletMapping.class);
+
+    private HttpServletTransactionManager transactionManager = null;
+    private String action = null;
+    private boolean dump = false;
+    private String responseContentType = null;
+    private String responseCharacterEncoding = null;
+    private List<PatternResolver> operationMappings = new ArrayList<PatternResolver>();
 
     static private class PatternResolver {
+
         private String pattern;
         private String method;
         private String service;
@@ -98,12 +102,14 @@ public class RESTHttpServletMapping implements HttpServletMapping
         private boolean extractHdr;
         private List<String> propNames = new ArrayList<String>();
         private List<Pattern> patterns = new ArrayList<Pattern>();
-        
+
         public PatternResolver() {
+
             // do nothing
         }
 
         public void init(Node node) throws AdapterHttpInitializationException {
+
             try {
                 this.pattern = XMLConfig.get(node, "@pattern");
                 if ((pattern == null) || "".equals(pattern)) {
@@ -123,14 +129,15 @@ public class RESTHttpServletMapping implements HttpServletMapping
                     throw new AdapterHttpInitializationException("RESTHttpServletMapping - Error initializing Pattern[" + method + "#" + pattern + "]: empty @operation");
                 }
                 this.extractHdr = XMLConfig.getBoolean(node, "@extract-headers", false);
-            }
-            catch (XMLConfigException exc) {
+                
+            } catch (XMLConfigException exc) {
                 throw new AdapterHttpInitializationException("RESTHttpServletMapping - Error initializing Pattern: error reading configuration", exc);
             }
             compile();
         }
 
         private void compile() throws AdapterHttpInitializationException {
+
             logger.debug("Compile - BEGIN");
             logger.debug("Pattern: " + method + "#" + pattern);
             String locPattern = pattern;
@@ -154,10 +161,11 @@ public class RESTHttpServletMapping implements HttpServletMapping
                 throw new AdapterHttpInitializationException("RESTHttpServletMapping - Error initializing Pattern[" + method + "#" + pattern + "]: empty");
             }
         }
-        
+
         public String match(HttpServletRequest request, String methodName, String path, GVBuffer data) throws AdapterHttpExecutionException {
+
             try {
-                logger.debug("Checking [" + method + "#" + pattern +"] on [" + methodName + "#" + path + "]");
+                logger.debug("Checking [" + method + "#" + pattern + "] on [" + methodName + "#" + path + "]");
                 if (!method.equalsIgnoreCase(methodName)) {
                     logger.debug("Pattern [" + method + "#" + pattern + "] NOT matched");
                     return null;
@@ -173,35 +181,36 @@ public class RESTHttpServletMapping implements HttpServletMapping
                         Matcher m = patterns.get(i).matcher(parts[i]);
                         if (m.matches()) {
                             values.add(parts[i]);
-                        }
-                        else {
-                            logger.debug("Pattern [" + method + "#" + pattern +"] NOT matched");
+                        } else {
+                            logger.debug("Pattern [" + method + "#" + pattern + "] NOT matched");
                             return null;
                         }
                     }
-    
+
                     data.setService(service);
                     data.setSystem(system);
                     for (int i = 0; i < propNames.size(); i++) {
                         data.setProperty(propNames.get(i), values.get(i));
                     }
-                    logger.debug("Pattern [" + method + "#" + pattern +"] matched");
+                    logger.debug("Pattern [" + method + "#" + pattern + "] matched");
                     return operation;
                 }
-                logger.debug("Pattern [" + method + "#" + pattern +"] NOT matched");
+                logger.debug("Pattern [" + method + "#" + pattern + "] NOT matched");
                 return null;
-            }
-            catch (Exception exc) {
+            } catch (Exception exc) {
                 throw new AdapterHttpExecutionException("RESTHttpServletMapping - Error evaluating Pattern[" + method + "#" + pattern + "]", exc);
             }
         }
 
         public boolean isExtractHdr() {
+
             return this.extractHdr;
         }
 
+
         @Override
         public String toString() {
+
             return method + "#" + pattern + " -> " + service + "/" + system + "/" + operation;
         }
     }
@@ -213,16 +222,14 @@ public class RESTHttpServletMapping implements HttpServletMapping
      * @param configurationFile
      * @throws AdapterHttpInitializationException
      */
-    public void init(HttpServletTransactionManager transactionManager, FormatterManager formatterMgr,
-            Node configurationNode) throws AdapterHttpInitializationException
-    {
+    public void init(HttpServletTransactionManager transactionManager, FormatterManager formatterMgr, Node configurationNode) throws AdapterHttpInitializationException {
+
         this.transactionManager = transactionManager;
 
         try {
             action = XMLConfig.get(configurationNode, "@Action");
             dump = XMLConfig.getBoolean(configurationNode, "@dump-in-out", false);
-            responseContentType = XMLConfig.get(configurationNode, "@RespContentType",
-                    AdapterHttpConstants.APPXML_MIMETYPE_NAME);
+            responseContentType = XMLConfig.get(configurationNode, "@RespContentType", AdapterHttpConstants.APPXML_MIMETYPE_NAME);
             responseCharacterEncoding = XMLConfig.get(configurationNode, "@RespCharacterEncoding", "UTF-8");
 
             NodeList opMaps = XMLConfig.getNodeList(configurationNode, "OperationMappings/Mapping");
@@ -231,13 +238,14 @@ public class RESTHttpServletMapping implements HttpServletMapping
                 operationMappings.add(buildPatternResolver(opM));
             }
         }
-        /*catch (AdapterHttpInitializationException exc) {
-            throw exc;
-        }*/
+        /*
+         * catch (AdapterHttpInitializationException exc) {
+         * throw exc;
+         * }
+         */
         catch (Exception exc) {
             logger.error("RESTHttpServletMapping - Error initializing action '" + action + "'", exc);
-            throw new AdapterHttpInitializationException("RESTHttpServletMapping - Error initializing action '" + action
-                    + "'", exc);
+            throw new AdapterHttpInitializationException("RESTHttpServletMapping - Error initializing action '" + action + "'", exc);
         }
     }
 
@@ -247,16 +255,16 @@ public class RESTHttpServletMapping implements HttpServletMapping
      * @return if request handling was successful
      * @throws InboundHttpResponseException
      */
-    public void handleRequest(String methodName, HttpServletRequest req, HttpServletResponse resp) throws InboundHttpResponseException
-    {
+    public void handleRequest(String methodName, HttpServletRequest req, HttpServletResponse resp) throws InboundHttpResponseException {
+
         logger.debug("handleRequest start");
         long startTime = System.currentTimeMillis();
-       
+
         GVTransactionInfo transInfo = new GVTransactionInfo();
-       
+
         Throwable exception = null;
-    	GVBuffer response = null;
-        	
+        GVBuffer response = null;
+
         try {
             if (dump) {
                 StringBuffer sb = new StringBuffer();
@@ -273,7 +281,7 @@ public class RESTHttpServletMapping implements HttpServletMapping
             if (query == null) {
                 query = "";
             }
-            
+
             GVBuffer request = new GVBuffer();
             String operationType = null;
             PatternResolver pr = null;
@@ -281,15 +289,15 @@ public class RESTHttpServletMapping implements HttpServletMapping
             while (i.hasNext()) {
                 pr = i.next();
                 operationType = pr.match(req, methodName, path, request);
-                if (operationType != null) {
+                if (operationType != null) {                   
                     break;
                 }
             }
-            
+
             if (operationType == null) {
                 logger.error(action + " - handleRequest - Error while handling request parameters: unable to decode requested operation [" + methodName + "#" + path + "]");
                 resp.sendError(400, "Unable to decode the requested operation [" + methodName + "#" + path + "]");
-                
+
             }
 
             transInfo.setService(request.getService());
@@ -306,50 +314,57 @@ public class RESTHttpServletMapping implements HttpServletMapping
             request.setProperty("HTTP_REMOTE_ADDR", (remAddr != null ? remAddr : ""));
 
             parseRequest(req, methodName, pr, request);
-            
+
             GVBufferMDC.put(request);
             NMDC.setOperation(operationType);
             logger.info(GVFormatLog.formatBEGINOperation(request).toString());
+            
+            ResourceKey resource = new GVCoreServiceKey(null, request.getService(), operationType);
+            if (ACLManager.requiresAuthentication(resource)) {
+                logger.debug("Perfroming required auhtentication for resource {} ", resource);
+                GVSecurityGuard.authenticate(req, resp);
+            } else {
+                logger.debug("Auhtentication not required for resource {} ", resource);
+            }
 
             transactionManager.begin(request.getService(), operationType);
 
             response = executeService(operationType, request);
-            
+
             if (response.getPropertyNamesSet().contains("HTTP_FORCE_TX_ROLLBACK")) {
-            	transInfo.setErrorCode(-1);
-            	manageHttpResponse(response, resp);
+                transInfo.setErrorCode(-1);
+                manageHttpResponse(response, resp);
             } else {
-	            transactionManager.commit(transInfo, true);	
-	            manageHttpResponse(response, resp);	
-	            transactionManager.commit(transInfo, false);
+                transactionManager.commit(transInfo, true);
+                manageHttpResponse(response, resp);
+                transactionManager.commit(transInfo, false);
             }
-                     
+
             logger.debug("handleRequest stop");
-        }
-        catch (Throwable exc) {
-        	exception = exc;
-        	transInfo.setErrorCode(-1);         
-        	
-        	
+        } catch (SecurityException securityException) {
+            exception = securityException;
+            transInfo.setErrorCode(-1);
+
+            logger.error("handleRequest - User authentication failed", securityException);
+        } catch (Throwable exc) {
+            exception = exc;
+            transInfo.setErrorCode(-1);
+
             logger.error("handleRequest - Service request failed", exc);
             try {
-            	 if (exc.getMessage().contains("GV_SERVICE_POLICY_ERROR")) {
-            		 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-            	 } else {
-            		 resp.sendError(500, "" + exc); 
-            	 }               
+                if (exc.getMessage().contains("GV_SERVICE_POLICY_ERROR")) {
+                    resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                } else {
+                    resp.sendError(500, "" + exc);
+                }
+            } catch (IOException exc1) {
+                throw new InboundHttpResponseException("GVHTTP_INBOUND_HTTP_RESPONSE_ERROR", new String[][] { { "errorName", "" + exc1 } }, exc1);
             }
-            catch (IOException exc1) {
-                throw new InboundHttpResponseException("GVHTTP_INBOUND_HTTP_RESPONSE_ERROR", new String[][]{{"errorName",
-                    "" + exc1}}, exc1);
-            }
-        }
-        finally {
+        } finally {
             if (transInfo.isError()) {
                 try {
                     transactionManager.rollback(transInfo, false);
-                }
-                catch (Exception exc) {
+                } catch (Exception exc) {
                     logger.error("handleRequest - Transaction failed: " + exc);
                 }
             }
@@ -359,18 +374,16 @@ public class RESTHttpServletMapping implements HttpServletMapping
             GVFormatLog gvFormatLog = null;
             if (exception != null) {
                 gvFormatLog = GVFormatLog.formatENDOperation(exception, totalTime);
-            }
-            else {
+            } else {
                 if (response != null) {
                     gvFormatLog = GVFormatLog.formatENDOperation(response, totalTime);
-                }
-                else {
+                } else {
                     gvFormatLog = GVFormatLog.formatENDOperation(totalTime);
                 }
             }
             logger.info(gvFormatLog.toString());
         }
-        
+
     }
 
     /**
@@ -379,6 +392,7 @@ public class RESTHttpServletMapping implements HttpServletMapping
      * @throws GVException
      */
     private void parseRequest(HttpServletRequest req, String methodName, PatternResolver pr, GVBuffer request) throws GVException {
+
         try {
             Map<String, String[]> params = req.getParameterMap();
             Iterator<String> i = params.keySet().iterator();
@@ -393,58 +407,56 @@ public class RESTHttpServletMapping implements HttpServletMapping
             request.setProperty("HTTP_REQ_CONTENT_TYPE", ct.isEmpty() ? ct : "NULL");
             String acc = req.getHeader("Accept");
             request.setProperty("HTTP_REQ_ACCEPT", (acc != null) ? acc : "NULL");
-           
+
             if (methodName.equals("POST") || methodName.equals("PUT")) {
                 if (!ct.startsWith(AdapterHttpConstants.URLENCODED_MIMETYPE_NAME)) {
                     Object requestContent = IOUtils.toByteArray(req.getInputStream());
-                    if (ct.startsWith(AdapterHttpConstants.APPXML_MIMETYPE_NAME) ||
-                        ct.startsWith(AdapterHttpConstants.APPJSON_MIMETYPE_NAME) ||
-                        ct.startsWith("text/")) {
+                    if (ct.startsWith(AdapterHttpConstants.APPXML_MIMETYPE_NAME) || ct.startsWith(AdapterHttpConstants.APPJSON_MIMETYPE_NAME) || ct.startsWith("text/")) {
                         /* GESTIRE ENCODING!!! */
                         requestContent = new String((byte[]) requestContent);
                     }
                     request.setObject(requestContent);
                 } else {
-                	
-                	String requestdata = Optional.ofNullable(IOUtils.toString(req.getInputStream(), StandardCharsets.UTF_8)).orElse("");
-                	
-                	JSONObject requestContent = new JSONObject();
-                	
-                	for (String param : requestdata.split("&")) {
-                		
-                		String[] paramKeyValue = URLDecoder.decode(param, StandardCharsets.UTF_8.name()).split("=", 2);
-                		
-                	    Object v = null;
-                		
-                	    if (paramKeyValue.length>1) {
-	                		try {
-	            				v = new JSONObject(paramKeyValue[1]);
-	            			} catch (JSONException notJsonObject) {
-	            				
-	            				try {
-	            					v = new JSONArray(paramKeyValue[1]);
-	            				} catch (JSONException notJsonArray) {
-	            					v =  paramKeyValue[1];
-	            				
-	            				}
-							}
-                	    } else {
-                	    	v = JSONObject.NULL;
-                	    }
-                	    
-                	    if (requestContent.has(paramKeyValue[0])) {                	    	
-                	    	
-                	    	Object currentVal  = requestContent.get(paramKeyValue[0]);                	    	
-                	    	v = currentVal instanceof JSONArray ? JSONArray.class.cast(currentVal).put(v) : new JSONArray().put(currentVal).put(v);
-                	    	
-                	    }
-                	    
-                	    requestContent.put(paramKeyValue[0], v);
-                		
-                	}
-                	
-                	request.setObject(requestContent.toString().getBytes());
-                	
+
+                    String requestdata = Optional.ofNullable(IOUtils.toString(req.getInputStream(), StandardCharsets.UTF_8)).orElse("");
+
+                    JSONObject requestContent = new JSONObject();
+
+                    for (String param : requestdata.split("&")) {
+
+                        String[] paramKeyValue = URLDecoder.decode(param, StandardCharsets.UTF_8.name()).split("=", 2);
+
+                        Object v = null;
+
+                        if (paramKeyValue.length > 1) {
+                            try {
+                                v = new JSONObject(paramKeyValue[1]);
+                            } catch (JSONException notJsonObject) {
+
+                                try {
+                                    v = new JSONArray(paramKeyValue[1]);
+                                } catch (JSONException notJsonArray) {
+                                    v = paramKeyValue[1];
+
+                                }
+                            }
+                        } else {
+                            v = JSONObject.NULL;
+                        }
+
+                        if (requestContent.has(paramKeyValue[0])) {
+
+                            Object currentVal = requestContent.get(paramKeyValue[0]);
+                            v = currentVal instanceof JSONArray ? JSONArray.class.cast(currentVal).put(v) : new JSONArray().put(currentVal).put(v);
+
+                        }
+
+                        requestContent.put(paramKeyValue[0], v);
+
+                    }
+
+                    request.setObject(requestContent.toString().getBytes());
+
                 }
             }
 
@@ -464,28 +476,27 @@ public class RESTHttpServletMapping implements HttpServletMapping
                         parser.setAttribute(h, "v", val);
                     }
                     request.setProperty("HTTP_REQ_HEADERS", parser.serializeDOM(doc, true, false));
-                }
-                finally {
+                } finally {
                     XMLUtils.releaseParserInstance(parser);
                 }
             }
-            
-        }
-        catch (Exception exc) {
+
+        } catch (Exception exc) {
             throw new AdapterHttpExecutionException("RESTHttpServletMapping - Error parsing request data", exc);
         }
     }
 
     @Override
     public boolean isDumpInOut() {
+
         return dump;
     }
 
     /**
      *
      */
-    public void destroy()
-    {
+    public void destroy() {
+
         transactionManager = null;
         operationMappings.clear();
     }
@@ -493,21 +504,24 @@ public class RESTHttpServletMapping implements HttpServletMapping
     /**
      * @return the servlet action
      */
-    public String getAction()
-    {
+    public String getAction() {
+
         return action;
     }
 
     /**
      * @return the <code>GVBuffer</code> response
-     * @throws AdapterHttpInitializationException 
+     * @throws AdapterHttpInitializationException
      */
-    /*public GVBuffer getResponse()
-    {
-        return response;
-    }*/
+    /*
+     * public GVBuffer getResponse()
+     * {
+     * return response;
+     * }
+     */
 
     private PatternResolver buildPatternResolver(Node n) throws AdapterHttpInitializationException {
+
         PatternResolver pr = new PatternResolver();
         pr.init(n);
         return pr;
@@ -520,17 +534,16 @@ public class RESTHttpServletMapping implements HttpServletMapping
      * encapsulating response.
      * 
      * @param operationType
-     *        the type of communication paradigm to be used.
+     * the type of communication paradigm to be used.
      * @param gvdInput
-     *        the input <code>GVBuffer</code> object.
+     * the input <code>GVBuffer</code> object.
      * @return an <code>GVBuffer</code> object encapsulating GVCore
-     *         response
+     * response
      * @throws GVRequestException
-     *         if service request to GVConnector fails.
+     * if service request to GVConnector fails.
      */
-    private GVBuffer executeService(String operationType, GVBuffer gvInput) throws GVRequestException,
-            GVPublicException
-    {
+    private GVBuffer executeService(String operationType, GVBuffer gvInput) throws GVRequestException, GVPublicException {
+
         logger.info("BEGIN - Perform Remote Call(GVCore) - Operation(" + operationType + ")");
         GVBuffer gvOutput = null;
         String status = "OK";
@@ -539,10 +552,10 @@ public class RESTHttpServletMapping implements HttpServletMapping
         long totalTime = 0;
         NMDC.push();
         try {
-            
+
             GreenVulcanoPool greenVulcanoPool = GreenVulcanoPoolManager.instance()
-            													.getGreenVulcanoPool(AdapterHttpConstants.SUBSYSTEM)
-                												.orElseGet(GreenVulcanoPoolManager::getDefaultGreenVulcanoPool);
+                                                                       .getGreenVulcanoPool(AdapterHttpConstants.SUBSYSTEM)
+                                                                       .orElseGet(GreenVulcanoPoolManager::getDefaultGreenVulcanoPool);
             if (greenVulcanoPool == null) {
                 throw new InboundHttpResponseException("GVHTTP_GREENVULCANOPOOL_NOT_CONFIGURED");
             }
@@ -550,27 +563,21 @@ public class RESTHttpServletMapping implements HttpServletMapping
             try {
                 gvOutput = greenVulcanoPool.forward(gvInput, operationType);
                 return gvOutput;
-            }
-            catch (Exception exc) {
+            } catch (Exception exc) {
                 status = "FAILED";
-                logger.error("FAILED",exc);
+                logger.error("FAILED", exc);
                 throw exc;
-            }
-            finally {
+            } finally {
                 NMDC.pop();
                 endTime = System.currentTimeMillis();
                 totalTime = endTime - startTime;
-                logger.info( "END - Perform Remote Call(GVCore) - Operation(" + operationType
-                        + ") - ExecutionTime (" + totalTime + ") - Status: " + status);
+                logger.info("END - Perform Remote Call(GVCore) - Operation(" + operationType + ") - ExecutionTime (" + totalTime + ") - Status: " + status);
             }
-        }
-        catch (GVPublicException exc) {
+        } catch (GVPublicException exc) {
             throw exc;
-        }
-        catch (Throwable exc) {
+        } catch (Throwable exc) {
             logger.error("executeServiceGVC - Runtime error while invoking GVCore: ", exc);
-            throw new GVRequestException("GVHTTP_RUNTIME_ERROR", new String[][]{{"phase", "invoking GVCore"},
-                    {"errorName", "" + exc}}, exc);
+            throw new GVRequestException("GVHTTP_RUNTIME_ERROR", new String[][] { { "phase", "invoking GVCore" }, { "errorName", "" + exc } }, exc);
         }
     }
 
@@ -579,11 +586,11 @@ public class RESTHttpServletMapping implements HttpServletMapping
      * communicating via HTTP.
      * 
      * @throws InboundHttpResponseException
-     *         if any error occurs.
+     * if any error occurs.
      */
     @SuppressWarnings("deprecation")
-	private void manageHttpResponse(GVBuffer response, HttpServletResponse resp) throws InboundHttpResponseException
-    {
+    private void manageHttpResponse(GVBuffer response, HttpServletResponse resp) throws InboundHttpResponseException {
+
         logger.debug("manageHttpResponse start");
         String respCharacterEncoding = null;
         try {
@@ -592,24 +599,20 @@ public class RESTHttpServletMapping implements HttpServletMapping
             if (respStatusCode != null) {
                 if (respStatusMsg == null) {
                     resp.setStatus(Integer.parseInt(respStatusCode));
-                }
-                else {
-                	                    
+                } else {
+
                     resp.setStatus(Integer.parseInt(respStatusCode), respStatusMsg);
                 }
             }
-            
-            
-            Stream.of(response.getPropertyNames())
-                   .filter(p->p.startsWith("HTTP_RESP_HEADERS_"))
-                   .forEach(key->{
-                	   
-                	   String headerKey = key.split("HTTP_RESP_HEADERS_")[1];                	   
-                	   
-                	   resp.setHeader(headerKey, response.getProperty(key));
-                	   
-                   });
-           
+
+            Stream.of(response.getPropertyNames()).filter(p -> p.startsWith("HTTP_RESP_HEADERS_")).forEach(key -> {
+
+                String headerKey = key.split("HTTP_RESP_HEADERS_")[1];
+
+                resp.setHeader(headerKey, response.getProperty(key));
+
+            });
+
             Object data = response.getObject();
             if (data != null) {
                 respCharacterEncoding = response.getProperty("HTTP_RESP_CHAR_ENCODING");
@@ -625,38 +628,30 @@ public class RESTHttpServletMapping implements HttpServletMapping
                     int fileSize = -1;
                     if (data instanceof byte[]) {
                         fileSize = ((byte[]) data).length;
-                    }
-                    else {
+                    } else {
                         throw new InboundHttpResponseException("Invalid GVBuffer content: " + data.getClass().getName());
                     }
                     setRespDownloadHeaders(resp, respContentType, fileName, fileSize);
-                }
-                else {
+                } else {
                     setRespContentTypeAndCharset(resp, respContentType, respCharacterEncoding);
                 }
-            	
+
                 OutputStream out = resp.getOutputStream();
-                if (respContentType.equals(AdapterHttpConstants.APPXML_MIMETYPE_NAME) ||
-                    respContentType.equals(AdapterHttpConstants.APPJSON_MIMETYPE_NAME) ||
-                    respContentType.startsWith("text/")) {
+                if (respContentType.equals(AdapterHttpConstants.APPXML_MIMETYPE_NAME) || respContentType.equals(AdapterHttpConstants.APPJSON_MIMETYPE_NAME)
+                    || respContentType.startsWith("text/")) {
                     if (data instanceof byte[]) {
                         IOUtils.write((byte[]) data, out);
-                    }
-                    else if (data instanceof String) {
+                    } else if (data instanceof String) {
                         IOUtils.write((String) data, out, respCharacterEncoding);
-                    }
-                    else if (data instanceof Node) {
+                    } else if (data instanceof Node) {
                         XMLUtils.serializeDOMToStream_S((Node) data, out, respCharacterEncoding, false, false);
-                    }
-                    else {
+                    } else {
                         throw new InboundHttpResponseException("Invalid GVBuffer content: " + data.getClass().getName());
                     }
-                }
-                else {
+                } else {
                     if (data instanceof byte[]) {
                         IOUtils.write((byte[]) data, out);
-                    }
-                    else {
+                    } else {
                         throw new InboundHttpResponseException("Invalid GVBuffer content: " + data.getClass().getName());
                     }
                 }
@@ -669,19 +664,13 @@ public class RESTHttpServletMapping implements HttpServletMapping
                 DumpUtils.dump(resp, sb);
                 logger.debug(sb.toString());
             }
-        }
-        catch (UnsupportedEncodingException exc) {
-            logger.error("manageResponse - Can't encode response to invoking system using encoding "
-                    + respCharacterEncoding + ": " + exc);
-            throw new InboundHttpResponseException("GVHTTP_CHARACTER_ENCODING_ERROR", new String[][]{
-                    {"encName", respCharacterEncoding}, {"errorName", "" + exc}}, exc);
-        }
-        catch (Exception exc) {
+        } catch (UnsupportedEncodingException exc) {
+            logger.error("manageResponse - Can't encode response to invoking system using encoding " + respCharacterEncoding + ": " + exc);
+            throw new InboundHttpResponseException("GVHTTP_CHARACTER_ENCODING_ERROR", new String[][] { { "encName", respCharacterEncoding }, { "errorName", "" + exc } }, exc);
+        } catch (Exception exc) {
             logger.error("manageResponse - Can't send response to invoking system: " + exc);
-            throw new InboundHttpResponseException("GVHTTP_INBOUND_HTTP_RESPONSE_ERROR", new String[][]{{"errorName",
-                    "" + exc}}, exc);
-        }
-        finally {
+            throw new InboundHttpResponseException("GVHTTP_INBOUND_HTTP_RESPONSE_ERROR", new String[][] { { "errorName", "" + exc } }, exc);
+        } finally {
             logger.debug("manageHttpResponse stop");
         }
     }
@@ -690,14 +679,14 @@ public class RESTHttpServletMapping implements HttpServletMapping
      * Sets content type and charset header fields of the servlet response.
      * 
      * @param resp
-     *        An HttpServletResponse object
+     * An HttpServletResponse object
      * @param contentType
-     *        A string containing the declared response's content type
+     * A string containing the declared response's content type
      * @param charset
-     *        A string containing the declared response's charset
+     * A string containing the declared response's charset
      */
-    private void setRespContentTypeAndCharset(HttpServletResponse resp, String contentType, String charset)
-    {
+    private void setRespContentTypeAndCharset(HttpServletResponse resp, String contentType, String charset) {
+
         resp.setContentType(contentType);
         resp.setCharacterEncoding(charset);
     }
@@ -706,16 +695,16 @@ public class RESTHttpServletMapping implements HttpServletMapping
      * Sets header fields for file download.
      * 
      * @param resp
-     *        An HttpServletResponse object
+     * An HttpServletResponse object
      * @param contentType
-     *        A string containing the declared response's content type
+     * A string containing the declared response's content type
      * @param fileName
-     *        A string containing the downloaded file name
+     * A string containing the downloaded file name
      * @param fileSize
-     *        A string containing the downloaded file size
+     * A string containing the downloaded file size
      */
-    private void setRespDownloadHeaders(HttpServletResponse resp, String contentType, String fileName, int fileSize)
-    {
+    private void setRespDownloadHeaders(HttpServletResponse resp, String contentType, String fileName, int fileSize) {
+
         resp.setContentType(contentType);
         resp.setContentLength(fileSize);
         resp.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");

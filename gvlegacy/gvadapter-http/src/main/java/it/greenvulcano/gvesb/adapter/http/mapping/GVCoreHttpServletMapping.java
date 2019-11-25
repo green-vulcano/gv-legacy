@@ -28,6 +28,7 @@ import it.greenvulcano.gvesb.adapter.http.formatters.Formatter;
 import it.greenvulcano.gvesb.adapter.http.formatters.FormatterExecutionException;
 import it.greenvulcano.gvesb.adapter.http.formatters.FormatterManager;
 import it.greenvulcano.gvesb.adapter.http.formatters.handlers.GVTransactionInfo;
+import it.greenvulcano.gvesb.adapter.http.security.GVSecurityGuard;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpConstants;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpException;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpInitializationException;
@@ -40,7 +41,8 @@ import it.greenvulcano.gvesb.core.pool.GreenVulcanoPool;
 import it.greenvulcano.gvesb.core.pool.GreenVulcanoPoolManager;
 import it.greenvulcano.gvesb.log.GVBufferMDC;
 import it.greenvulcano.gvesb.log.GVFormatLog;
-
+import it.greenvulcano.gvesb.policy.ACLManager;
+import it.greenvulcano.gvesb.policy.impl.GVCoreServiceKey;
 import it.greenvulcano.log.NMDC;
 
 import java.io.IOException;
@@ -59,22 +61,22 @@ import org.w3c.dom.Node;
 /**
  * GVCoreHttpServletMapping class
  * 
- * @version 3.1.0 Feb 07, 2011
+ * @version 4.1.0 October 23, 2019
  * @author GreenVulcano Developer Team
  * 
  * 
  */
-public class GVCoreHttpServletMapping implements HttpServletMapping
-{
-    private static Logger                 logger              = org.slf4j.LoggerFactory.getLogger(GVCoreHttpServletMapping.class);
+public class GVCoreHttpServletMapping implements HttpServletMapping {
 
-    private Formatter                     formatter           = null;
-    private HttpServletTransactionManager transactionManager  = null;
-    private String                        action              = null;
-    private boolean                       dump                = false;
-    private RetCodeHandler                retCodeHandlerIn    = null;
-    private RetCodeHandler                retCodeHandlerOut   = null;
-    private String                        responseContentType = null;
+    private static Logger logger = org.slf4j.LoggerFactory.getLogger(GVCoreHttpServletMapping.class);
+
+    private Formatter formatter = null;
+    private HttpServletTransactionManager transactionManager = null;
+    private String action = null;
+    private boolean dump = false;
+    private RetCodeHandler retCodeHandlerIn = null;
+    private RetCodeHandler retCodeHandlerOut = null;
+    private String responseContentType = null;
 
     /**
      * @param transactionManager
@@ -83,9 +85,8 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
      * @param configurationFile
      * @throws AdapterHttpInitializationException
      */
-    public void init(HttpServletTransactionManager transactionManager, FormatterManager formatterMgr,
-            Node configurationNode) throws AdapterHttpInitializationException
-    {
+    public void init(HttpServletTransactionManager transactionManager, FormatterManager formatterMgr, Node configurationNode) throws AdapterHttpInitializationException {
+
         this.transactionManager = transactionManager;
 
         try {
@@ -97,16 +98,12 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
             retCodeHandlerIn.init(XMLConfig.getNode(configurationNode, "RetCodeConversionIn"));
             retCodeHandlerOut = new RetCodeHandler();
             retCodeHandlerOut.init(XMLConfig.getNode(configurationNode, "RetCodeConversionOut"));
-            responseContentType = XMLConfig.get(configurationNode, "@RespContentType",
-                    AdapterHttpConstants.TEXTHTML_MIMETYPE_NAME);
-        }
-        catch (AdapterHttpInitializationException exc) {
+            responseContentType = XMLConfig.get(configurationNode, "@RespContentType", AdapterHttpConstants.TEXTHTML_MIMETYPE_NAME);
+        } catch (AdapterHttpInitializationException exc) {
             throw exc;
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             logger.error("GVCoreHttpServletMapping - Error initializing action '" + action + "'", exc);
-            throw new AdapterHttpInitializationException("GVCoreHttpServletMapping - Error initializing action '" + action
-                    + "'", exc);
+            throw new AdapterHttpInitializationException("GVCoreHttpServletMapping - Error initializing action '" + action + "'", exc);
         }
     }
 
@@ -116,24 +113,24 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
      * @return if request handling was successful
      * @throws InboundHttpResponseException
      */
-    public void handleRequest(String methodName, HttpServletRequest req, HttpServletResponse resp) throws InboundHttpResponseException
-    {
+    public void handleRequest(String methodName, HttpServletRequest req, HttpServletResponse resp) throws InboundHttpResponseException {
+
         logger.debug("handleRequest start");
         long startTime = System.currentTimeMillis();
-       
+
         GVTransactionInfo transInfo = new GVTransactionInfo();
         Map<String, Object> environment = new HashMap<String, Object>();
-             
-    	GVBuffer response = null;    	    	
+
+        GVBuffer response = null;
         Exception exception = null;
-        
+
         if (dump) {
             try {
-            	StringBuffer sb = new StringBuffer();
+                StringBuffer sb = new StringBuffer();
                 DumpUtils.dump(req, sb);
                 logger.info(sb.toString());
             } catch (IOException ioException) {
-            	logger.error("Request dump failed", ioException);
+                logger.error("Request dump failed", ioException);
             }
         }
 
@@ -164,11 +161,14 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
             String remAddr = req.getRemoteAddr();
             request.setProperty("HTTP_REMOTE_ADDR", (remAddr != null ? remAddr : ""));
 
-            
             GVBufferMDC.put(request);
             String operationType = (String) environment.get(AdapterHttpConstants.ENV_KEY_OP_TYPE);
             NMDC.setOperation(operationType);
             logger.info(GVFormatLog.formatBEGINOperation(request).toString());
+
+            if (ACLManager.requiresAuthentication(new GVCoreServiceKey(null, request.getService(), operationType))) {
+                GVSecurityGuard.authenticate(req, resp);
+            }
 
             transactionManager.begin(request.getService(), operationType);
 
@@ -182,31 +182,36 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
             transactionManager.commit(transInfo, true);
             manageHttpResponse(environment);
             transactionManager.commit(transInfo, false);
-          
-        }  catch (GVException gvException) {
-        	exception = gvException;
+        } catch (IOException | SecurityException securityException) {
+            exception = securityException;
+            transInfo.setErrorCode(-1);
+
+            logger.error("handleRequest - User authentication failed", securityException);
+
+        } catch (GVException gvException) {
+            exception = gvException;
             environment.put(AdapterHttpConstants.ENV_KEY_GVBUFFER_OUTPUT, gvException);
             logger.error(action + " - handleRequest failed ", gvException);
             transInfo.setErrorCode(gvException.getErrorCode());
             transInfo.setErrorMessage(gvException.getMessage());
             manageHttpResponse(environment);
         } catch (RuntimeException runtimeException) {
-        	exception = runtimeException;
-           
+            exception = runtimeException;
+
             environment.put(AdapterHttpConstants.ENV_KEY_GVBUFFER_OUTPUT, runtimeException);
             logger.error("handleRequest - Service request failed for a runtime error", runtimeException);
-            AdapterHttpException adpEx = new AdapterHttpException("GVHTTP_RUNTIME_ERROR", new String[][]{
-                    {"phase", "managing inbound request"}, {"errorName", "" + runtimeException}}, runtimeException);
+            AdapterHttpException adpEx = new AdapterHttpException("GVHTTP_RUNTIME_ERROR",
+                                                                  new String[][] { { "phase", "managing inbound request" }, { "errorName", "" + runtimeException } },
+                                                                  runtimeException);
             transInfo.setErrorCode(adpEx.getErrorCode());
             transInfo.setErrorMessage(adpEx.getMessage());
             manageHttpResponse(environment);
-        }   finally {
-            
-        	if (transInfo.isError()) {
+        } finally {
+
+            if (transInfo.isError()) {
                 try {
                     transactionManager.rollback(transInfo, false);
-                }
-                catch (Exception exc) {
+                } catch (Exception exc) {
                     logger.error("handleRequest - Transaction failed: " + exc);
                 }
             }
@@ -219,8 +224,7 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
             } else {
                 if (response != null) {
                     gvFormatLog = GVFormatLog.formatENDOperation(response, totalTime);
-                }
-                else {
+                } else {
                     gvFormatLog = GVFormatLog.formatENDOperation(totalTime);
                 }
             }
@@ -228,19 +232,20 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
 
             environment.clear();
         }
-        
+
     }
 
     @Override
     public boolean isDumpInOut() {
+
         return dump;
     }
 
     /**
      *
      */
-    public void destroy()
-    {
+    public void destroy() {
+
         formatter = null;
         transactionManager = null;
         retCodeHandlerIn = null;
@@ -250,18 +255,20 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
     /**
      * @return the servlet action
      */
-    public String getAction()
-    {
+    public String getAction() {
+
         return action;
     }
 
     /**
      * @return the <code>GVBuffer</code> response
      */
-    /*public GVBuffer getResponse()
-    {
-        return response;
-    }*/
+    /*
+     * public GVBuffer getResponse()
+     * {
+     * return response;
+     * }
+     */
 
     /**
      * Invoke GVCore object method corresponding to the specified
@@ -270,17 +277,16 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
      * encapsulating response.
      * 
      * @param operationType
-     *        the type of communication paradigm to be used.
+     * the type of communication paradigm to be used.
      * @param gvdInput
-     *        the input <code>GVBuffer</code> object.
+     * the input <code>GVBuffer</code> object.
      * @return an <code>GVBuffer</code> object encapsulating GVCore
-     *         response
+     * response
      * @throws GVRequestException
-     *         if service request to GVConnector fails.
+     * if service request to GVConnector fails.
      */
-    private GVBuffer executeService(String operationType, GVBuffer gvInput) throws GVRequestException,
-            GVPublicException
-    {
+    private GVBuffer executeService(String operationType, GVBuffer gvInput) throws GVRequestException, GVPublicException {
+
         logger.info("BEGIN - Perform Remote Call(GVCore) - Operation(" + operationType + ")");
         GVBuffer gvOutput = null;
         String status = "OK";
@@ -289,10 +295,10 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
         long totalTime = 0;
         NMDC.push();
         try {
-      
-            GreenVulcanoPool greenVulcanoPool = GreenVulcanoPoolManager.instance()	
-            												.getGreenVulcanoPool(AdapterHttpConstants.SUBSYSTEM)
-            												.orElseGet(GreenVulcanoPoolManager::getDefaultGreenVulcanoPool);
+
+            GreenVulcanoPool greenVulcanoPool = GreenVulcanoPoolManager.instance()
+                                                                       .getGreenVulcanoPool(AdapterHttpConstants.SUBSYSTEM)
+                                                                       .orElseGet(GreenVulcanoPoolManager::getDefaultGreenVulcanoPool);
             if (greenVulcanoPool == null) {
                 throw new InboundHttpResponseException("GVHTTP_GREENVULCANOPOOL_NOT_CONFIGURED");
             }
@@ -300,27 +306,21 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
             try {
                 gvOutput = greenVulcanoPool.forward(gvInput, operationType);
                 return gvOutput;
-            }
-            catch (Exception exc) {
+            } catch (Exception exc) {
                 status = "FAILED";
-              
+
                 throw exc;
-            }
-            finally {
+            } finally {
                 NMDC.pop();
                 endTime = System.currentTimeMillis();
                 totalTime = endTime - startTime;
-                logger.debug("END - Perform Remote Call(GVCore) - Operation(" + operationType
-                        + ") - ExecutionTime (" + totalTime + ") - Status: " + status);
+                logger.debug("END - Perform Remote Call(GVCore) - Operation(" + operationType + ") - ExecutionTime (" + totalTime + ") - Status: " + status);
             }
-        }
-        catch (GVPublicException exc) {
+        } catch (GVPublicException exc) {
             throw exc;
-        }
-        catch (Throwable exc) {
+        } catch (Throwable exc) {
             logger.error("executeServiceGVC - Runtime error while invoking GVCore: ", exc);
-            throw new GVRequestException("GVHTTP_RUNTIME_ERROR", new String[][]{{"phase", "invoking GVCore"},
-                    {"errorName", "" + exc}}, exc);
+            throw new GVRequestException("GVHTTP_RUNTIME_ERROR", new String[][] { { "phase", "invoking GVCore" }, { "errorName", "" + exc } }, exc);
         }
     }
 
@@ -329,11 +329,11 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
      * communicating via HTTP.
      * 
      * @throws InboundHttpResponseException
-     *         if any error occurs.
+     * if any error occurs.
      */
     @SuppressWarnings("unchecked")
-    private void manageHttpResponse(Map<String, Object> environment) throws InboundHttpResponseException
-    {
+    private void manageHttpResponse(Map<String, Object> environment) throws InboundHttpResponseException {
+
         logger.debug("manageHttpResponse start");
         String respCharacterEncoding = null;
         try {
@@ -366,29 +366,22 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
             out.write(responseString);
             out.flush();
             out.close();
-            
+
             if (dump) {
                 StringBuffer sb = new StringBuffer();
                 DumpUtils.dump(resp, sb);
                 logger.info(sb.toString());
             }
-        }
-        catch (FormatterExecutionException exc) {
+        } catch (FormatterExecutionException exc) {
             logger.error("manageResponse - Error while handling response parameters: " + exc);
-            throw new InboundHttpResponseException("GVHTTP_HANDLER_ERROR", new String[][]{{"errorName", "" + exc}}, exc);
-        }
-        catch (UnsupportedEncodingException exc) {
-            logger.error("manageResponse - Can't encode response to invoking system using encoding "
-                    + respCharacterEncoding + ": " + exc);
-            throw new InboundHttpResponseException("GVHTTP_CHARACTER_ENCODING_ERROR", new String[][]{
-                    {"encName", respCharacterEncoding}, {"errorName", "" + exc}}, exc);
-        }
-        catch (IOException exc) {
+            throw new InboundHttpResponseException("GVHTTP_HANDLER_ERROR", new String[][] { { "errorName", "" + exc } }, exc);
+        } catch (UnsupportedEncodingException exc) {
+            logger.error("manageResponse - Can't encode response to invoking system using encoding " + respCharacterEncoding + ": " + exc);
+            throw new InboundHttpResponseException("GVHTTP_CHARACTER_ENCODING_ERROR", new String[][] { { "encName", respCharacterEncoding }, { "errorName", "" + exc } }, exc);
+        } catch (IOException exc) {
             logger.error("manageResponse - Can't send response to invoking system: " + exc);
-            throw new InboundHttpResponseException("GVHTTP_INBOUND_HTTP_RESPONSE_ERROR", new String[][]{{"errorName",
-                    "" + exc}}, exc);
-        }
-        finally {
+            throw new InboundHttpResponseException("GVHTTP_INBOUND_HTTP_RESPONSE_ERROR", new String[][] { { "errorName", "" + exc } }, exc);
+        } finally {
             logger.debug("manageHttpResponse stop");
         }
     }
@@ -397,14 +390,14 @@ public class GVCoreHttpServletMapping implements HttpServletMapping
      * Sets content type and charset header fields of the servlet response.
      * 
      * @param resp
-     *        An HttpServletResponse object
+     * An HttpServletResponse object
      * @param contentType
-     *        A string containing the declared response's content type
+     * A string containing the declared response's content type
      * @param charset
-     *        A string containing the declared response's charset
+     * A string containing the declared response's charset
      */
-    private void setRespContentTypeAndCharset(HttpServletResponse resp, String contentType, String charset)
-    {
+    private void setRespContentTypeAndCharset(HttpServletResponse resp, String contentType, String charset) {
+
         resp.setContentType(contentType + "; charset=" + charset);
     }
 }
