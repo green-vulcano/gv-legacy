@@ -295,9 +295,10 @@ public class RESTHttpServletMapping implements HttpServletMapping {
             }
 
             if (operationType == null) {
-                logger.error(action + " - handleRequest - Error while handling request parameters: unable to decode requested operation [" + methodName + "#" + path + "]");
                 resp.sendError(400, "Unable to decode the requested operation [" + methodName + "#" + path + "]");
-
+                
+                String mappingErrorMessage = "Error handling request: unable to decode requested operation [" + methodName + "#" + path + "]";
+                throw new IllegalArgumentException(mappingErrorMessage);
             }
 
             transInfo.setService(request.getService());
