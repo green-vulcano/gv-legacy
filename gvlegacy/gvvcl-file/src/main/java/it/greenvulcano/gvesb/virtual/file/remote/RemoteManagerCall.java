@@ -91,14 +91,14 @@ public class RemoteManagerCall implements CallOperation
             name = XMLConfig.get(node, "@name");
 
             Node nm = XMLConfig.getNode(node, "*[@type='remote-manager']");
-            manager = (RemoteManager) Class.forName(XMLConfig.get(nm, "@class")).newInstance();
+            manager = (RemoteManager) Class.forName(XMLConfig.get(nm, "@class")).getConstructor().newInstance();
             manager.init(nm);
 
             logger.debug("BEGIN RemoteManagerCall[" + name + "] initialization");
             NodeList nl = XMLConfig.getNodeList(node, "RemoteCommands/*[@type='remote-command']");
             for (int i = 0; i < nl.getLength(); i++) {
                 Node cmdNode = nl.item(i);
-                GVRemoteCommand comm = (GVRemoteCommand) Class.forName(XMLConfig.get(cmdNode, "@class")).newInstance();
+                GVRemoteCommand comm = (GVRemoteCommand) Class.forName(XMLConfig.get(cmdNode, "@class")).getConstructor().newInstance();
                 comm.init(cmdNode);
                 logger.debug("Initialized Command: " + comm);
                 commands.add(comm);

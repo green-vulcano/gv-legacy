@@ -51,8 +51,6 @@ public abstract class SSHManager extends RemoteManager {
 
 	private boolean isConnected = false;
 
-	private int remotePort;
-
 	private JSch jsch;
 
 	private String privateKey;
@@ -67,7 +65,6 @@ public abstract class SSHManager extends RemoteManager {
 	public void init(Node configNode) throws RemoteManagerException {
 		super.init(configNode);
 		try {
-			remotePort = XMLConfig.getInteger(configNode, "@port", 22);
 			knownHostFilePath = XMLConfig.get(configNode, "@knownHostFilePath");
 			if (knownHostFilePath != null) {
 				if (!PropertiesHandler.isExpanded(knownHostFilePath)) {
@@ -146,17 +143,17 @@ public abstract class SSHManager extends RemoteManager {
 
 	private Session getSession(Map<String, String> optProperties) throws RemoteManagerException {
 		Session session = null;
-		String localHostname = hostname;
 		try {
 			Map<String, Object> localProps = MapUtils.convertToHMStringObject(optProperties);
 			String localUsername = PropertiesHandler.expand(username, localProps);
-			localHostname = PropertiesHandler.expand(hostname, localProps);
-			logger.debug("Creating session to SFTP server " + localHostname + ":" + port + ". Logging in as SFTP user "
+			String localHostname = PropertiesHandler.expand(hostname, localProps);
+			String localPort = PropertiesHandler.expand(port, localProps);
+			logger.debug("Creating session to SFTP server " + localHostname + ":" + localPort + ". Logging in as SFTP user "
 					+ localUsername + "...");
 
 			if (authMethod.equals("password")) {
 				String localPassword = XMLConfig.getDecrypted(PropertiesHandler.expand(password, localProps));
-				session = jsch.getSession(localUsername, localHostname, remotePort);
+				session = jsch.getSession(localUsername, localHostname, Integer.valueOf(localPort));
 				session.setPassword(localPassword);
 			} else {
 				
@@ -168,7 +165,7 @@ public abstract class SSHManager extends RemoteManager {
 				} else {
 				    jsch.addIdentity(localPrivateKey);
 				}
-				session = jsch.getSession(localUsername, localHostname, remotePort);
+				session = jsch.getSession(localUsername, localHostname, Integer.valueOf(localPort));
 			}
 
 			Properties config = new Properties();
