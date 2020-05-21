@@ -1,22 +1,22 @@
-/*******************************************************************************
- * Copyright (c) 2009, 2016 GreenVulcano ESB Open Source Project.
- * All rights reserved.
+/*
+ * Copyright (c) 2010-2020 GreenVulcano ESB Open Source Project. All rights
+ * reserved.
  *
  * This file is part of GreenVulcano ESB.
  *
- * GreenVulcano ESB is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * GreenVulcano ESB is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * GreenVulcano ESB is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
+ * GreenVulcano ESB is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with GreenVulcano ESB. If not, see <http://www.gnu.org/licenses/>.
- *******************************************************************************/
+ */
 package it.greenvulcano.gvesb.datahandling.dbo;
 
 import it.greenvulcano.configuration.XMLConfig;
@@ -46,7 +46,6 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import org.slf4j.Logger;
-import org.apache.log4j.MDC;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -56,7 +55,7 @@ import org.w3c.dom.NodeList;
  * IDBO Class specialized in selecting data from the DB using multiple Threads.
  * The selected data are formatted as RowSet XML document.
  *
- * @version 3.0.0 Mar 30, 2010
+ * @version 4.1.0 May 21, 2020
  * @author GreenVulcano Developer Team
  */
 public class DBOThreadSelect extends AbstractDBO
@@ -76,24 +75,19 @@ public class DBOThreadSelect extends AbstractDBO
         private final static int    ERROR            = 3;
 
         private int                 state            = NEW;
-        private Map<Object, Object> context          = null;
+        private Throwable           throwable        = null;
         private long                rowThreadCounter = 0;
 
-        private ThreadSelect(Map<Object, Object> ctx)
-        {
-            context = ctx;
-        }
-
+        
         @Override
-        @SuppressWarnings("unchecked")
         public void run()
         {
-            MDC.getContext().putAll(context);
             Thread thd = Thread.currentThread();
             logger.debug("Thread " + thd.getName() + " started.");
             state = RUNNING;
             Connection conn = null;
             Statement sqlStatement = null;
+            StatementInfo sqlStatementInfo = null;
             ResultSet rs = null;
             try {
                 Set<Integer> keyField = keysMap.get(key);
@@ -111,6 +105,7 @@ public class DBOThreadSelect extends AbstractDBO
                     String expandedSQL = PropertiesHandler.expand(stmt, props, null, conn);
                     sqlStatement = conn.createStatement();
                     logger.debug("Executing select statement: " + expandedSQL + ".");
+                    sqlStatementInfo = new StatementInfo(key.toString(), expandedSQL, sqlStatement);
                     rs = sqlStatement.executeQuery(expandedSQL);
                     if (rs != null) {
                         Document localDoc = rowSetBuilder.createDocument(null);
@@ -144,12 +139,16 @@ public class DBOThreadSelect extends AbstractDBO
                 }
             }
             catch (SQLException exc) {
+                logger.error("Error on execution of " + dboclass + " with name [" + getName() + "]", exc);
+                logger.error("SQL Statement Informations:\n" + sqlStatementInfo);
                 OracleExceptionHandler.handleSQLException(exc).printLoggerInfo();
                 state = ERROR;
+                throwable = exc;
             }
             catch (Throwable exc) {
                 logger.error("Thread " + thd.getName() + " terminated with error.", exc);
                 state = ERROR;
+                throwable = exc;
             }
             finally {
                 if (rs != null) {
@@ -160,13 +159,15 @@ public class DBOThreadSelect extends AbstractDBO
                         // do nothing
                     }
                 }
-                if (sqlStatement != null) {
+                if (sqlStatementInfo != null) {
                     try {
-                        sqlStatement.close();
+                    	sqlStatementInfo.close();
                     }
                     catch (Exception exc) {
                         // do nothing
                     }
+                    sqlStatementInfo = null;
+                    sqlStatement = null;
                 }
                 if (conn != null) {
                     try {
@@ -289,7 +290,7 @@ public class DBOThreadSelect extends AbstractDBO
                     StringTokenizer sTok = new StringTokenizer(keys, ",");
                     while (sTok.hasMoreTokens()) {
                         String str = sTok.nextToken();
-                        s.add(new Integer(str.trim()));
+                        s.add(Integer.valueOf(str.trim()));
                     }
                     keysMap.put(id, s);
                 }
@@ -369,11 +370,12 @@ public class DBOThreadSelect extends AbstractDBO
      * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
      *      java.sql.Connection, java.util.Map)
      */
-    @SuppressWarnings("unchecked")
     @Override
     public void execute(OutputStream dataOut, Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
         XMLUtils parser = null;
+        Throwable throwable = null;
+
         try {
             prepare();
             rowCounter = 0;
@@ -416,7 +418,7 @@ public class DBOThreadSelect extends AbstractDBO
             for (Entry<String, String> entry : statements.entrySet()) {
                 Object key = entry.getKey();
                 String stmt = entry.getValue();
-                ThreadSelect ts = new ThreadSelect(MDC.getContext());
+                ThreadSelect ts = new ThreadSelect();
                 ts.setDocument(doc);
                 ts.setStatement(stmt);
                 ts.setKey(key);
@@ -452,6 +454,7 @@ public class DBOThreadSelect extends AbstractDBO
                                 thrSelVector.remove(idx);
                                 rowCounter += to.getRowThreadCounter();
                                 error = true;
+                                throwable = to.throwable;
                                 idx = 0;
                             }
                                 break;
@@ -483,6 +486,9 @@ public class DBOThreadSelect extends AbstractDBO
                 thrVector.clear();
             }
 
+        	if (throwable != null) {
+        	   throw throwable;
+        	}
             byte[] dataDOM = parser.serializeDOMToByteArray(doc);
             dataOut.write(dataDOM);
 
@@ -491,7 +497,7 @@ public class DBOThreadSelect extends AbstractDBO
 
             logger.debug("End execution of DB data read through " + dboclass);
         }
-        catch (Exception exc) {
+        catch (Throwable exc) {
             logger.error("Error on execution of " + dboclass + " with name [" + getName() + "]", exc);
             ThreadUtils.checkInterrupted(exc);
             throw new DBOException("Error on execution of " + dboclass + " with name [" + getName() + "]: "
