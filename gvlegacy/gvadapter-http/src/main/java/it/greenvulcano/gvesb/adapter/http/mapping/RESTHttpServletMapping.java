@@ -51,6 +51,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -62,6 +64,7 @@ import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
@@ -129,7 +132,7 @@ public class RESTHttpServletMapping implements HttpServletMapping {
                     throw new AdapterHttpInitializationException("RESTHttpServletMapping - Error initializing Pattern[" + method + "#" + pattern + "]: empty @operation");
                 }
                 this.extractHdr = XMLConfig.getBoolean(node, "@extract-headers", false);
-                
+
             } catch (XMLConfigException exc) {
                 throw new AdapterHttpInitializationException("RESTHttpServletMapping - Error initializing Pattern: error reading configuration", exc);
             }
@@ -206,7 +209,6 @@ public class RESTHttpServletMapping implements HttpServletMapping {
 
             return this.extractHdr;
         }
-
 
         @Override
         public String toString() {
@@ -289,14 +291,14 @@ public class RESTHttpServletMapping implements HttpServletMapping {
             while (i.hasNext()) {
                 pr = i.next();
                 operationType = pr.match(req, methodName, path, request);
-                if (operationType != null) {                   
+                if (operationType != null) {
                     break;
                 }
             }
 
             if (operationType == null) {
                 resp.sendError(400, "Unable to decode the requested operation [" + methodName + "#" + path + "]");
-                
+
                 String mappingErrorMessage = "Error handling request: unable to decode requested operation [" + methodName + "#" + path + "]";
                 throw new IllegalArgumentException(mappingErrorMessage);
             }
@@ -319,7 +321,7 @@ public class RESTHttpServletMapping implements HttpServletMapping {
             GVBufferMDC.put(request);
             NMDC.setOperation(operationType);
             logger.info(GVFormatLog.formatBEGINOperation(request).toString());
-            
+
             ResourceKey resource = new GVCoreServiceKey(null, request.getService(), operationType);
             if (ACLManager.requiresAuthentication(resource)) {
                 logger.debug("Perfroming required auhtentication for resource {} ", resource);
@@ -404,20 +406,16 @@ public class RESTHttpServletMapping implements HttpServletMapping {
                 request.setProperty(n, ((v != null) && !"".equals(v)) ? v : "NULL");
             }
 
-            String ct = Optional.ofNullable(req.getContentType()).orElse("");
-            request.setProperty("HTTP_REQ_CONTENT_TYPE", ct.isEmpty() ? ct : "NULL");
+            String ct = Optional.ofNullable(req.getContentType()).orElse("NULL").trim();
+            request.setProperty("HTTP_REQ_CONTENT_TYPE", ct);
             String acc = req.getHeader("Accept");
             request.setProperty("HTTP_REQ_ACCEPT", (acc != null) ? acc : "NULL");
 
             if (methodName.equals("POST") || methodName.equals("PUT")) {
-                if (!ct.startsWith(AdapterHttpConstants.URLENCODED_MIMETYPE_NAME)) {
-                    Object requestContent = IOUtils.toByteArray(req.getInputStream());
-                    if (ct.startsWith(AdapterHttpConstants.APPXML_MIMETYPE_NAME) || ct.startsWith(AdapterHttpConstants.APPJSON_MIMETYPE_NAME) || ct.startsWith("text/")) {
-                        /* GESTIRE ENCODING!!! */
-                        requestContent = new String((byte[]) requestContent);
-                    }
-                    request.setObject(requestContent);
-                } else {
+
+                if (ct.startsWith(AdapterHttpConstants.URLENCODED_MIMETYPE_NAME)) {
+
+                    logger.debug("Converting form encoded request in JSON");
 
                     String requestdata = Optional.ofNullable(IOUtils.toString(req.getInputStream(), StandardCharsets.UTF_8)).orElse("");
 
@@ -456,8 +454,50 @@ public class RESTHttpServletMapping implements HttpServletMapping {
 
                     }
 
-                    request.setObject(requestContent.toString().getBytes());
+                    request.setObject(requestContent.toString());
 
+                } else if (ct.startsWith(AdapterHttpConstants.MULTIPART_MIMETYPE_NAME)) {
+
+                    logger.debug("Converting multipart encoded request in JSON");
+                    
+                    JSONObject requestContent = new JSONObject();
+                
+                    Collection<Part> parts = req.getParts();
+                    for (Part part : parts) {
+                        JSONObject partContent = new JSONObject();
+                        partContent.put("contentType", part.getContentType());
+                        partContent.put("headers", new JSONObject());
+                        for (String header : part.getHeaderNames()) {
+                            partContent.getJSONObject("headers").put(header, part.getHeader(header));
+                        }
+    
+                        Optional.ofNullable(part.getSubmittedFileName()).ifPresent(n -> partContent.put("filename", n));
+    
+                        byte[] partData = IOUtils.toByteArray(part.getInputStream());
+    
+                        if (part.getContentType().startsWith(AdapterHttpConstants.APPXML_MIMETYPE_NAME) 
+                            || part.getContentType().startsWith(AdapterHttpConstants.APPJSON_MIMETYPE_NAME)
+                            || part.getContentType().startsWith("text/")) {
+    
+                            partContent.put("content", new String(partData));
+                        } else {
+                            partContent.put("content", Base64.getEncoder().encodeToString(partData));
+                        }
+    
+                        requestContent.put(part.getName(), partContent);
+                    }
+
+                    request.setObject(requestContent.toString());
+                    
+                } else {
+
+                    Object requestContent = IOUtils.toByteArray(req.getInputStream());
+                    if (ct.startsWith(AdapterHttpConstants.APPXML_MIMETYPE_NAME) || ct.startsWith(AdapterHttpConstants.APPJSON_MIMETYPE_NAME) || ct.startsWith("text/")) {
+                        /* GESTIRE ENCODING!!! */
+                        requestContent = new String((byte[]) requestContent);
+                    }
+
+                    request.setObject(requestContent);
                 }
             }
 

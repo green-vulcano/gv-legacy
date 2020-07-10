@@ -81,7 +81,8 @@
                 <artifactId>maven-bundle-plugin</artifactId>
                 <version>${maven-bundle-plugin.version}</version>
                 <extensions>true</extensions>
-                <configuration>                	
+                <configuration>
+                    <manifestLocation>${project.build.directory}/bundle-plugin</manifestLocation>                	
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Version>${project.version}</Bundle-Version>
@@ -106,6 +107,7 @@
                         	it.greenvulcano.gvesb.iam.exception,
                         	javax.servlet,
                         	javax.servlet.http,
+                        	javax.servlet.annotation,
                         	javax.xml.parsers,
                         	javax.xml.transform,
                         	org.osgi.framework,
@@ -137,11 +139,14 @@
             </plugin>
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
+                <version>3.2.0</version>
                 <configuration>
-                <webXml>src/main/resources/WEB-INF/web.xml</webXml>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
+                    
+                    <archive>                       
+                        <manifestFile>${project.build.directory}/bundle-plugin/MANIFEST.MF</manifestFile>
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                    </archive>                              
+
                 </configuration>
             </plugin>
         </plugins>

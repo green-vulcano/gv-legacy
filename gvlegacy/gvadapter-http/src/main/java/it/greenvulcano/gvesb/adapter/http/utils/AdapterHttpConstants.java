@@ -62,6 +62,11 @@ public final class AdapterHttpConstants
      * Http MIME-Type value "application/x-www-form-urlencoded".
      */
     public final static String URLENCODED_MIMETYPE_NAME          = "application/x-www-form-urlencoded";
+    
+    /**
+    * Http MIME-Type value "multipart/form-data".
+    */
+   public final static String MULTIPART_MIMETYPE_NAME            = "multipart/form-data";
 
     /**
      * Http MIME-Type value "application/xml".

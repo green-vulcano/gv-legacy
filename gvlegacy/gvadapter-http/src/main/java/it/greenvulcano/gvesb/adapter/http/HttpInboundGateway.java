@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.util.Objects;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,6 +51,8 @@ import org.slf4j.Logger;
  * 
  * 
  */
+@WebServlet( name ="HttpInboundGateway", loadOnStartup = 1, urlPatterns = {"/inbound/*"} )
+@MultipartConfig(location="/tmp", fileSizeThreshold=33554432, maxFileSize=75497472, maxRequestSize=125829120)
 public class HttpInboundGateway extends HttpServlet {
 
     private static final long serialVersionUID = -6337761728589142613L;
