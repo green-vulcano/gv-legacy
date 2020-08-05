@@ -27,8 +27,8 @@ import it.greenvulcano.gvesb.adapter.http.formatters.FormatterManager;
 import it.greenvulcano.gvesb.adapter.http.utils.AdapterHttpInitializationException;
 import it.greenvulcano.gvesb.adapter.http.utils.DumpUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -37,6 +37,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -47,47 +49,49 @@ import org.w3c.dom.Node;
 
 /**
  *
- * @version 4.0 25/mar/2016
+ * @version 4.1.0 05/aug/2020
  * @author GreenVulcano Developer Team
  *
  */
-public class ForwardHttpServletMapping implements HttpServletMapping
-{
-    private static final Logger logger                 = org.slf4j.LoggerFactory.getLogger(ForwardHttpServletMapping.class);
-    public static final int     DEFAULT_CONN_TIMEOUT   = 10000;
-    public static final int     DEFAULT_SO_TIMEOUT     = 30000;
+public class ForwardHttpServletMapping implements HttpServletMapping {
 
-    private String              action;
-    private boolean             dump                   = false;
-    private URLConnection       connection;
-    private String              host;
-    private String              port;
-    private boolean             secure                 = false;
-    
-    private String              contextPath;
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(ForwardHttpServletMapping.class);
+    public static final int DEFAULT_CONN_TIMEOUT = 10000;
+    public static final int DEFAULT_SO_TIMEOUT = 30000;
 
-    private int                 connTimeout            = DEFAULT_CONN_TIMEOUT;
-    private int                 soTimeout              = DEFAULT_SO_TIMEOUT;
-    
-    
+    private String action;
+    private boolean dump = false;
+    private URLConnection connection;
+    private String host;
+    private String port;
+    private boolean secure = false;
+
+    private String contextPath;
+
+    private int connTimeout = DEFAULT_CONN_TIMEOUT;
+    private int soTimeout = DEFAULT_SO_TIMEOUT;
+
     /**
      * 
      */
     public ForwardHttpServletMapping() {
+
         // do nothing
     }
 
-    /* (non-Javadoc)
-     * @see it.greenvulcano.gvesb.adapter.http.HttpServletMapping#init(it.greenvulcano.gvesb.adapter.http.HttpServletTransactionManager, it.greenvulcano.gvesb.adapter.http.formatters.FormatterManager, org.w3c.dom.Node)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see it.greenvulcano.gvesb.adapter.http.HttpServletMapping#init(it.greenvulcano.gvesb.adapter.http.HttpServletTransactionManager,
+     * it.greenvulcano.gvesb.adapter.http.formatters.FormatterManager, org.w3c.dom.Node)
      */
     @Override
-    public void init(HttpServletTransactionManager transactionManager, FormatterManager formatterMgr,
-            Node configurationNode) throws AdapterHttpInitializationException {
-      
+    public void init(HttpServletTransactionManager transactionManager, FormatterManager formatterMgr, Node configurationNode) throws AdapterHttpInitializationException {
+
         try {
             action = XMLConfig.get(configurationNode, "@Action");
             dump = XMLConfig.getBoolean(configurationNode, "@dump-in-out", false);
-            
+
             Node endpointNode = XMLConfig.getNode(configurationNode, "endpoint");
             host = XMLConfig.get(endpointNode, "@host");
             port = XMLConfig.get(endpointNode, "@port", "80");
@@ -95,61 +99,62 @@ public class ForwardHttpServletMapping implements HttpServletMapping
             secure = XMLConfig.getBoolean(endpointNode, "@secure", false);
             connTimeout = XMLConfig.getInteger(endpointNode, "@conn-timeout", DEFAULT_CONN_TIMEOUT);
             soTimeout = XMLConfig.getInteger(endpointNode, "@so-timeout", DEFAULT_SO_TIMEOUT);
-            
+
             URL url = new URL(secure ? "https" : "http", host, Integer.valueOf(port), contextPath);
-          
+
             Node proxyConfigNode = XMLConfig.getNode(endpointNode, "Proxy");
             if (proxyConfigNode != null) {
                 String proxyHost = XMLConfig.get(proxyConfigNode, "@host");
                 int proxyPort = XMLConfig.getInteger(proxyConfigNode, "@port", 80);
-                
-                Proxy proxy = new Proxy(Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));                
+
+                Proxy proxy = new Proxy(Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
                 connection = url.openConnection(proxy);
-                
-                String proxyUser = XMLConfig.get(proxyConfigNode, "@user","");
+
+                String proxyUser = XMLConfig.get(proxyConfigNode, "@user", "");
                 String proxyPassword = XMLConfig.getDecrypted(proxyConfigNode, "@password", "");
-                
-                if (proxyUser.trim().length()>0) {
-                	String proxyAuthorization = proxyUser+":"+proxyPassword;
-                	connection.setRequestProperty("Proxy-Authorization", Base64.getEncoder().encodeToString(proxyAuthorization.getBytes()));
+
+                if (proxyUser.trim().length() > 0) {
+                    String proxyAuthorization = proxyUser + ":" + proxyPassword;
+                    connection.setRequestProperty("Proxy-Authorization", Base64.getEncoder().encodeToString(proxyAuthorization.getBytes()));
                 }
-                                
+
             } else {
-            	 connection = url.openConnection();
+                connection = url.openConnection();
             }
-            
+
             connection.setConnectTimeout(connTimeout);
-            
-        }
-        catch (Exception exc) {
-            throw new AdapterHttpInitializationException("GVHTTP_CONFIGURATION_ERROR", new String[][]{{"message", exc.getMessage()}},
-                    exc);
+
+        } catch (Exception exc) {
+            throw new AdapterHttpInitializationException("GVHTTP_CONFIGURATION_ERROR", new String[][] { { "message", exc.getMessage() } }, exc);
         }
 
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see it.greenvulcano.gvesb.adapter.http.HttpServletMapping#handleRequest(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
     @SuppressWarnings("deprecation")
-	@Override
+    @Override
     public void handleRequest(String methodName, HttpServletRequest req, HttpServletResponse resp) throws InboundHttpResponseException {
-        
+
         logger.debug("BEGIN forward: " + req.getRequestURI());
-        
-        final HttpURLConnection httpConnection = (HttpURLConnection) connection;;
-       
-        try {       	
-        	
-        	httpConnection.setRequestMethod(methodName);
-        	httpConnection.setReadTimeout(soTimeout);
-        	httpConnection.setDoInput(true);
-        	httpConnection.setDoOutput(true);
-        	
+
+        final HttpURLConnection httpConnection = (HttpURLConnection) connection;
+        ;
+
+        try {
+
+            httpConnection.setRequestMethod(methodName);
+            httpConnection.setReadTimeout(soTimeout);
+            httpConnection.setDoInput(true);
+            httpConnection.setDoOutput(true);
+
             if (dump) {
-            	StringBuffer sb = new StringBuffer();
-            	DumpUtils.dump(req, sb);
-            	logger.info(sb.toString());
+                StringBuffer sb = new StringBuffer();
+                DumpUtils.dump(req, sb);
+                logger.info(sb.toString());
             }
 
             String mapping = req.getPathInfo();
@@ -157,94 +162,102 @@ public class ForwardHttpServletMapping implements HttpServletMapping
                 mapping = "/";
             }
             String destPath = contextPath + mapping;
-            String queryString = req.getQueryString(); 
+            String queryString = req.getQueryString();
             if (queryString != null) {
-                destPath += "?" + queryString; 
+                destPath += "?" + queryString;
             }
             if (!destPath.startsWith("/")) {
-                destPath = "/" + destPath; 
+                destPath = "/" + destPath;
             }
             logger.info("Resulting QueryString: " + destPath);
-          
-           Collections.list(req.getHeaderNames())
-           			  .forEach(headerName -> {
-           				  		httpConnection.setRequestProperty(headerName, 
-           				  				Collections.list(req.getHeaders(headerName))
-           				  						   .stream()
-           				  						   .collect(Collectors.joining(";")));
-           			  });
-            
-                        
+
+            Collections.list(req.getHeaderNames()).forEach(headerName -> {
+                httpConnection.setRequestProperty(headerName, Collections.list(req.getHeaders(headerName)).stream().collect(Collectors.joining(";")));
+            });
+
             if (methodName.equalsIgnoreCase("POST") || methodName.equalsIgnoreCase("PUT")) {
-            	httpConnection.setDoOutput(true);
-            	IOUtils.copy(req.getInputStream(), httpConnection.getOutputStream());
-            	            	
+                httpConnection.setDoOutput(true);
+                IOUtils.copy(req.getInputStream(), httpConnection.getOutputStream());
+
             }
-           
+
             httpConnection.connect();
-            int status = httpConnection.getResponseCode();
-            
-            resp.setStatus(status, httpConnection.getResponseMessage());            
-        
-            httpConnection.getHeaderFields().entrySet().stream()
-            	.forEach(header -> {
-            		resp.addHeader(header.getKey(), header.getValue().stream().collect(Collectors.joining(";")));
-            	});
-            
-            ByteArrayOutputStream bodyOut = new ByteArrayOutputStream();
-            IOUtils.copy(httpConnection.getInputStream(), bodyOut);                       
-            
-            OutputStream out = resp.getOutputStream();
-            out.write(bodyOut.toByteArray());
-            //IOUtils.copy(method.getResponseBodyAsStream(), out);
-            out.flush();
-            out.close();
-            
-            if (dump) {
-            	StringBuffer sb = new StringBuffer();
-            	DumpUtils.dump(resp, bodyOut, sb);
-            	logger.info(sb.toString());
+
+            InputStream responseStream = null;
+
+            try {
+                resp.setStatus(httpConnection.getResponseCode(), httpConnection.getResponseMessage());
+                responseStream = httpConnection.getInputStream();
+            } catch (IOException connectionFail) {
+                responseStream = httpConnection.getErrorStream();
             }
-            
-            
-        }
-        catch (Exception exc) {
+
+            Map<String, List<String>> responseHeaders = httpConnection.getHeaderFields();
+            for (String header : responseHeaders.keySet()) {
+                try {
+                    logger.debug("Adding header: {}", header);
+                    List<String> headerValue = responseHeaders.get(header);
+                    if (headerValue != null) {
+                        resp.addHeader(header, headerValue.stream().collect(Collectors.joining(";")));
+                    }
+
+                } catch (Exception e) {
+                    logger.error("ERROR Adding header {}", header, e);
+                }
+            }
+
+            if (responseStream != null) {
+                byte[] responseData = IOUtils.toByteArray(responseStream);
+                resp.getOutputStream().write(responseData);
+            }
+
+            if (dump) {
+                StringBuffer sb = new StringBuffer();
+                DumpUtils.dump(resp, sb);
+                logger.info(sb.toString());
+            }
+
+            logger.debug("END forward: " + req.getRequestURI());
+        } catch (Exception exc) {
             logger.error("ERROR on forwarding: " + req.getRequestURI(), exc);
-            throw new InboundHttpResponseException("GV_CALL_SERVICE_ERROR", new String[][]{{"message", exc.getMessage()}}, exc);
-        }
-        finally {
+            throw new InboundHttpResponseException("GV_CALL_SERVICE_ERROR", new String[][] { { "message", exc.getMessage() } }, exc);
+        } finally {
             try {
                 if (httpConnection != null) {
                     httpConnection.disconnect();
                 }
-            }
-            catch (Exception exc) {
+            } catch (Exception exc) {
                 logger.warn("Error while releasing connection", exc);
             }
-            logger.debug("END forward: " + req.getRequestURI());
         }
     }
-    
-   
+
     @Override
     public boolean isDumpInOut() {
+
         return dump;
     }
-    
-    /* (non-Javadoc)
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see it.greenvulcano.gvesb.adapter.http.HttpServletMapping#destroy()
      */
     @Override
     public void destroy() {
+
         // do nothing
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see it.greenvulcano.gvesb.adapter.http.HttpServletMapping#getAction()
      */
     @Override
     public String getAction() {
+
         return action;
     }
-    
+
 }
