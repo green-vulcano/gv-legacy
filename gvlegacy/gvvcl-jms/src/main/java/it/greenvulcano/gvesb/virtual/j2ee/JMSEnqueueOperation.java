@@ -284,7 +284,7 @@ public class JMSEnqueueOperation extends J2EEOperation implements EnqueueOperati
                               
                 
                 if (messageId!=null) {
-                	message.setJMSMessageID(PropertiesHandler.expand(replyTo, gvBuffer));
+                	message.setJMSMessageID(PropertiesHandler.expand(messageId, gvBuffer));
                 }
                 
                 String actualCorrelationId = PropertiesHandler.expand(Optional.ofNullable(correlationId)
