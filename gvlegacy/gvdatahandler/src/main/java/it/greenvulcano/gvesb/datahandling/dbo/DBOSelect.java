@@ -19,19 +19,6 @@
  *******************************************************************************/
 package it.greenvulcano.gvesb.datahandling.dbo;
 
-import it.greenvulcano.configuration.XMLConfig;
-import it.greenvulcano.gvesb.datahandling.DBOException;
-import it.greenvulcano.gvesb.datahandling.dbo.utils.ExtendedRowSetBuilder;
-import it.greenvulcano.gvesb.datahandling.dbo.utils.ResultSetTransformer;
-import it.greenvulcano.gvesb.datahandling.dbo.utils.RowSetBuilder;
-import it.greenvulcano.gvesb.datahandling.dbo.utils.StandardRowSetBuilder;
-import it.greenvulcano.gvesb.datahandling.utils.FieldFormatter;
-import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptionHandler;
-import it.greenvulcano.util.metadata.PropertiesHandler;
-import it.greenvulcano.util.thread.ThreadUtils;
-import it.greenvulcano.util.xml.XMLUtils;
-
-import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -49,6 +36,18 @@ import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.datahandling.DBOException;
+import it.greenvulcano.gvesb.datahandling.dbo.utils.ResultSetTransformer;
+import it.greenvulcano.gvesb.datahandling.dbo.utils.RowSetBuilder;
+import it.greenvulcano.gvesb.datahandling.dbo.utils.RowSetBuilderFactory;
+import it.greenvulcano.gvesb.datahandling.utils.FieldFormatter;
+import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptionHandler;
+import it.greenvulcano.util.metadata.PropertiesHandler;
+import it.greenvulcano.util.thread.ThreadUtils;
+import it.greenvulcano.util.xml.XMLUtils;
+import it.greenvulcano.util.xml.XMLUtilsException;
 
 /**
  * IDBO Class specialized in selecting data from the DB.
@@ -72,6 +71,8 @@ public class DBOSelect extends AbstractDBO
     private RowSetBuilder                            rowSetBuilder          = null;
 
     private String rowSetBuilderType = null;
+    private Document                            xmlOut;
+    private JSONArray                          jsonOut;
     
     /**
      *
@@ -93,14 +94,9 @@ public class DBOSelect extends AbstractDBO
             forcedMode = XMLConfig.get(config, "@force-mode", MODE_DB2XML);
             isReturnData = XMLConfig.getBoolean(config, "@return-data", true);
             rowSetBuilderType = XMLConfig.get(config, "@rowset-builder", "standard");
-            if (rowSetBuilderType.equals("extended")) {
-                rowSetBuilder = new ExtendedRowSetBuilder();
+            if (!"json".equals(rowSetBuilderType)) {
+                rowSetBuilder = RowSetBuilderFactory.getRowSetBuilder(rowSetBuilderType, getName(), logger);
             }
-            else {
-                rowSetBuilder = new StandardRowSetBuilder();
-            }
-            rowSetBuilder.setName(getName());
-            rowSetBuilder.setLogger(logger);
 
             NodeList stmts = XMLConfig.getNodeList(config, "statement[@type='select']");
             String id = null;
@@ -184,23 +180,22 @@ public class DBOSelect extends AbstractDBO
 
     /**
      * Unsupported method for this IDBO.
-     * 
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.lang.Object,
+     *
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeIn(java.lang.Object,
      *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object input, Connection conn, Map<String, Object> props) throws DBOException
+    public void executeIn(Object input, Connection conn, Map<String, Object> props) throws DBOException
     {
         prepare();
-        throw new DBOException("Unsupported method - DBOSelect::execute(Object, Connection, Map)");
+        throw new DBOException("Unsupported method - DBOSelect::executeIn(Object, Connection, Map)");
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream dataOut, Connection conn, Map<String, Object> props) throws DBOException,
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
         XMLUtils parser = null;
         try {
@@ -229,17 +224,19 @@ public class DBOSelect extends AbstractDBO
             numberFormatter.setDecimalFormatSymbols(dfs);
             numberFormatter.applyPattern(numberFormat);
 
-            parser = XMLUtils.getParserInstance();
-            Document doc = rowSetBuilder.createDocument(parser);
-            
-            rowSetBuilder.setXMLUtils(parser);
-            rowSetBuilder.setDateFormatter(dateFormatter);
-            rowSetBuilder.setTimeFormatter(timeFormatter);
-            rowSetBuilder.setNumberFormatter(numberFormatter);
-            rowSetBuilder.setDecSeparator(decSeparator);
-            rowSetBuilder.setGroupSeparator(groupSeparator);
-            rowSetBuilder.setNumberFormat(numberFormat);
-            
+            createOutDocument() ;
+
+            if (rowSetBuilder != null) {
+            	parser = XMLUtils.getParserInstance();
+                rowSetBuilder.setXMLUtils(parser);
+                rowSetBuilder.setDateFormatter(dateFormatter);
+                rowSetBuilder.setTimeFormatter(timeFormatter);
+                rowSetBuilder.setNumberFormatter(numberFormatter);
+                rowSetBuilder.setDecSeparator(decSeparator);
+                rowSetBuilder.setGroupSeparator(groupSeparator);
+                rowSetBuilder.setNumberFormat(numberFormat);
+            }
+
             for (Entry<String, String> entry : statements.entrySet()) {
                 ThreadUtils.checkInterrupted(getClass().getSimpleName(), getName(), logger);
                 Object key = entry.getKey();
@@ -258,32 +255,18 @@ public class DBOSelect extends AbstractDBO
                     String expandedSQL = PropertiesHandler.expand(stmt, localProps, null, conn);
                     Statement statement = null;
                     try {
-                        statement = getInternalConn(conn).createStatement();
+                        statement = getInternalConn(conn, localProps).createStatement();
                         logger.debug("Executing select:\n" + expandedSQL);
-                        
+                        sqlStatementInfo = new StatementInfo(key.toString(), expandedSQL, statement);
                         ResultSet rs = statement.executeQuery(expandedSQL);
-                        
                         if (rs != null) {
                             try {
-                               
-                            	if ("json".equals(rowSetBuilderType)) {
-                            		
-                            		JSONArray jsondata = ResultSetTransformer.toJSONArray(rs);                            		
-                            		rowCounter += jsondata.length();
-                            		logger.debug("Formatting query result in JSON");
-                            		dataOut.write(jsondata.toString().getBytes());
-                            		
-                            	} else {
-                            		rowCounter += rowSetBuilder.build(doc, "" + key, rs, keyField, fieldNameToFormatter, 
-                                            fieldIdToFormatter);
-                            		
-	                        		 byte[] dataDOM = parser.serializeDOMToByteArray(doc);
-	                                 dataOut.write(dataDOM);                                     
-                            	}
-                            	
-                            	dhr.setRead(rowCounter);
-                                dhr.setTotal(rowCounter);                   	
-                            	
+                                if ("json".equals(rowSetBuilderType)) {
+                                	jsonOut = ResultSetTransformer.toJSONArray(rs);                            		
+                                    rowCounter += jsonOut.length();
+                                } else {
+                                	rowCounter += rowSetBuilder.build(xmlOut, "" + key, rs, keyField, fieldNameToFormatter,  fieldIdToFormatter);
+                                }
                             }
                             finally {
                                 if (rs != null) {
@@ -299,23 +282,31 @@ public class DBOSelect extends AbstractDBO
                         }
                     }
                     finally {
-                        if (statement != null) {
+                        if (sqlStatementInfo != null) {
                             try {
-                                statement.close();
+                                sqlStatementInfo.close();
                             }
                             catch (Exception exc) {
                                 // do nothing
                             }
+                            sqlStatementInfo = null;
                             statement = null;
                         }
                     }
                 }
             }
            
+            dhr.setRead(rowCounter);
+            dhr.setTotal(rowCounter);
 
             logger.debug("End execution of DB data read through " + dboclass);
+
+            return getResult();
         }
         catch (SQLException exc) {
+            logger.error("Error on execution of " + this.dboclass + " with name [" + getName() + "]", exc);
+            logger.error("SQL Statement Informations:\n" + this.sqlStatementInfo);
+
             OracleExceptionHandler.handleSQLException(exc);
             throw new DBOException("Error on execution of " + dboclass + " with name [" + getName() + "]: "
                         + exc.getMessage(), exc);
@@ -334,7 +325,58 @@ public class DBOSelect extends AbstractDBO
             if (parser != null) {
                 XMLUtils.releaseParserInstance(parser);
             }
-            rowSetBuilder.cleanup();
+            if (rowSetBuilder != null) {
+            	rowSetBuilder.cleanup();
+            }
+        }
+    }
+
+    /**
+     * @throws DBOException
+     *
+     */
+    private void createOutDocument() throws DBOException
+    {
+        if (rowSetBuilderType.equals("json")) {
+            xmlOut = null;
+            jsonOut = new JSONArray();
+        }
+        else {
+            jsonOut = null;
+            XMLUtils xml = null;
+            try {
+                xml = XMLUtils.getParserInstance();
+                xmlOut = rowSetBuilder.createDocument(xml);
+            }
+            catch (XMLUtilsException exc) {
+                throw new DBOException("Cannot instantiate XMLUtils.", exc);
+            }
+            finally {
+                XMLUtils.releaseParserInstance(xml);
+            }
+        }
+    }
+
+    /**
+     * @throws DBOException
+     *
+     */
+    private Object getResult() throws DBOException
+    {
+        if (rowSetBuilderType.equals("json")) {
+            try {
+                return jsonOut.toString();
+            }
+            catch (Exception exc) {
+                throw new DBOException("Cannot store DBOSelect JSON result.", exc);
+            }
+        }
+        else {
+            try {
+                return XMLUtils.serializeDOM_S(xmlOut);
+            } catch (XMLUtilsException exc) {
+                throw new DBOException("Cannot store DBOSelect XML result.", exc);
+            }
         }
     }
 }

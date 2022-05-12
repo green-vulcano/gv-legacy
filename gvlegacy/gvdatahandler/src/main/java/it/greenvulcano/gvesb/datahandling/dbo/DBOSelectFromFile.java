@@ -25,7 +25,6 @@ import it.greenvulcano.gvesb.datahandling.DBOException;
 import it.greenvulcano.util.metadata.PropertiesHandler;
 import it.greenvulcano.util.txt.TextUtils;
 
-import java.io.OutputStream;
 import java.sql.Connection;
 import java.util.Map;
 
@@ -62,7 +61,6 @@ public class DBOSelectFromFile extends AbstractDBO
         super.init(config);
         try {
             fileName = XMLConfig.get(config, "@file-name");
-            XMLConfig.getBoolean(config, "@read-from-cp", true);
         }
         catch (Exception exc) {
             logger.error("Error reading configuration of [" + getName() + "/" + dboclass + "]", exc);
@@ -73,22 +71,21 @@ public class DBOSelectFromFile extends AbstractDBO
     /**
      * Unsupported method for this IDBO.
      *
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.lang.Object,
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeIn(java.lang.Object,
      *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object input, Connection conn, Map<String, Object> props) throws DBOException
+    public void executeIn(Object input, Connection conn, Map<String, Object> props) throws DBOException
     {
         prepare();
-        throw new DBOException("Unsupported method - DBOSelectFromFile::execute(Object, Connection, Map)");
+        throw new DBOException("Unsupported method - DBOSelectFromFile::executeIn(Object, Connection, Map)");
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream dataOut, Connection conn, Map<String, Object> props) throws DBOException
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException
     {
         try {
             prepare();
@@ -96,12 +93,11 @@ public class DBOSelectFromFile extends AbstractDBO
             logger.debug("Begin execution of file [" + fileName + "] data read through " + dboclass);
 
             String fileData = TextUtils.readFile(fileName);
-            
-            fileData = PropertiesHandler.expand(fileData, props, null, conn);
 
-            dataOut.write(fileData.getBytes());
+            fileData = PropertiesHandler.expand(fileData, props, conn, null);
 
             logger.debug("End execution of file [" + fileName + "] data read through " + dboclass);
+            return fileData.getBytes();
         }
         catch (Exception exc) {
             logger.error("Error on execution of " + dboclass + " with name [" + getName() + "]", exc);

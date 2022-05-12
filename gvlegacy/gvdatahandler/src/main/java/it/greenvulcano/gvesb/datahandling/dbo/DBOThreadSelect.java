@@ -19,19 +19,6 @@
  */
 package it.greenvulcano.gvesb.datahandling.dbo;
 
-import it.greenvulcano.configuration.XMLConfig;
-import it.greenvulcano.gvesb.datahandling.DBOException;
-import it.greenvulcano.gvesb.datahandling.dbo.utils.ExtendedRowSetBuilder;
-import it.greenvulcano.gvesb.datahandling.dbo.utils.RowSetBuilder;
-import it.greenvulcano.gvesb.datahandling.dbo.utils.StandardRowSetBuilder;
-import it.greenvulcano.gvesb.datahandling.utils.FieldFormatter;
-import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptionHandler;
-import it.greenvulcano.gvesb.j2ee.db.connections.JDBCConnectionBuilder;
-import it.greenvulcano.util.metadata.PropertiesHandler;
-import it.greenvulcano.util.thread.ThreadUtils;
-import it.greenvulcano.util.xml.XMLUtils;
-
-import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -46,10 +33,22 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.datahandling.DBOException;
+import it.greenvulcano.gvesb.datahandling.dbo.utils.RowSetBuilder;
+import it.greenvulcano.gvesb.datahandling.dbo.utils.RowSetBuilderFactory;
+import it.greenvulcano.gvesb.datahandling.utils.FieldFormatter;
+import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptionHandler;
+import it.greenvulcano.gvesb.j2ee.db.connections.JDBCConnectionBuilder;
+import it.greenvulcano.util.metadata.PropertiesHandler;
+import it.greenvulcano.util.thread.ThreadUtils;
+import it.greenvulcano.util.xml.XMLUtils;
 
 /**
  * IDBO Class specialized in selecting data from the DB using multiple Threads.
@@ -63,6 +62,7 @@ public class DBOThreadSelect extends AbstractDBO
 
     private class ThreadSelect implements Runnable
     {
+        private String              localJdbcConnName = null;
         private String              stmt             = null;
         private Document            doc              = null;
         private Object              key              = null;
@@ -76,12 +76,19 @@ public class DBOThreadSelect extends AbstractDBO
 
         private int                 state            = NEW;
         private Throwable           throwable        = null;
+        private Map<String, String> context          = null;
         private long                rowThreadCounter = 0;
 
-        
+        private ThreadSelect(Map<String, String> ctx)
+        {
+            this.context = ctx;
+        }
+
         @Override
+        @SuppressWarnings("unchecked")
         public void run()
         {
+            MDC.setContextMap(this.context);
             Thread thd = Thread.currentThread();
             logger.debug("Thread " + thd.getName() + " started.");
             state = RUNNING;
@@ -212,14 +219,25 @@ public class DBOThreadSelect extends AbstractDBO
             this.rowSetBuilder = rowSetBuilder;
         }
 
+        private void setLocalJdbcConnName(String localJdbcConnName)
+        {
+            this.localJdbcConnName = localJdbcConnName;
+        }
+
         private Connection getConnection() throws Exception
         {
-            return JDBCConnectionBuilder.getConnection(getJdbcConnectionName());
+        	long startConn = System.currentTimeMillis();
+            Connection conn = JDBCConnectionBuilder.getConnection(localJdbcConnName);
+            long duration = System.currentTimeMillis() - startConn;
+            if (duration > DBOThreadSelect.this.timeConn) {
+            	DBOThreadSelect.this.timeConn = duration;
+            }
+            return conn;
         }
 
         private void releaseConnection(Connection conn) throws Exception
         {
-            JDBCConnectionBuilder.releaseConnection(getJdbcConnectionName(), conn);
+            JDBCConnectionBuilder.releaseConnection(localJdbcConnName, conn);
         }
 
         /**
@@ -264,14 +282,7 @@ public class DBOThreadSelect extends AbstractDBO
             forcedMode = XMLConfig.get(config, "@force-mode", MODE_DB2XML);
             isReturnData = XMLConfig.getBoolean(config, "@return-data", true);
             String rsBuilder = XMLConfig.get(config, "@rowset-builder", "standard");
-            if (rsBuilder.equals("extended")) {
-                rowSetBuilder = new ExtendedRowSetBuilder();
-            }
-            else {
-                rowSetBuilder = new StandardRowSetBuilder();
-            }
-            rowSetBuilder.setName(getName());
-            rowSetBuilder.setLogger(logger);
+            rowSetBuilder = RowSetBuilderFactory.getRowSetBuilder(rsBuilder, getName(), logger);
 
             NodeList stmts = XMLConfig.getNodeList(config, "statement[@type='select']");
             String id = null;
@@ -356,22 +367,22 @@ public class DBOThreadSelect extends AbstractDBO
     /**
      * Unsupported method for this IDBO.
      *
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.lang.Object,
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeIn(java.lang.Object,
      *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object input, Connection conn, Map<String, Object> props) throws DBOException,
+    public void executeIn(Object input, Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
         prepare();
-        throw new DBOException("Unsupported method - DBOSelect::execute(Object, Connection, Map)");
+        throw new DBOException("Unsupported method - DBOThreadSelect::executeIn(Object, Connection, Map)");
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public void execute(OutputStream dataOut, Connection conn, Map<String, Object> props) throws DBOException,
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
         XMLUtils parser = null;
         Throwable throwable = null;
@@ -411,19 +422,22 @@ public class DBOThreadSelect extends AbstractDBO
             rowSetBuilder.setDecSeparator(decSeparator);
             rowSetBuilder.setGroupSeparator(groupSeparator);
             rowSetBuilder.setNumberFormat(numberFormat);
-            
+
+            String localJdbcConnName = PropertiesHandler.expand(getJdbcConnectionName(), props);
+            logger.info("Using Connection: " + localJdbcConnName);
 
             Vector<ThreadSelect> thrSelVector = new Vector<ThreadSelect>();
             Vector<Thread> thrVector = new Vector<Thread>();
             for (Entry<String, String> entry : statements.entrySet()) {
                 Object key = entry.getKey();
                 String stmt = entry.getValue();
-                ThreadSelect ts = new ThreadSelect();
+                ThreadSelect ts = new ThreadSelect(MDC.getCopyOfContextMap());
                 ts.setDocument(doc);
                 ts.setStatement(stmt);
                 ts.setKey(key);
                 ts.setProps(localProps);
                 ts.setRowSetBuilder(rowSetBuilder.getCopy());
+                ts.setLocalJdbcConnName(localJdbcConnName);
                 thrSelVector.add(ts);
 
                 Thread t = new Thread(ts);
@@ -486,16 +500,14 @@ public class DBOThreadSelect extends AbstractDBO
                 thrVector.clear();
             }
 
-        	if (throwable != null) {
-        	   throw throwable;
-        	}
-            byte[] dataDOM = parser.serializeDOMToByteArray(doc);
-            dataOut.write(dataDOM);
+            if (throwable != null) {
+                throw throwable;
+            }
 
             dhr.setRead(rowCounter);
-            dhr.setTotal(rowCounter);
 
             logger.debug("End execution of DB data read through " + dboclass);
+            return XMLUtils.serializeDOM_S(doc);
         }
         catch (Throwable exc) {
             logger.error("Error on execution of " + dboclass + " with name [" + getName() + "]", exc);

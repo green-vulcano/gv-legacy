@@ -27,7 +27,6 @@ import it.greenvulcano.util.metadata.PropertiesHandler;
 import it.greenvulcano.util.thread.ThreadUtils;
 
 import java.io.FileWriter;
-import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -165,22 +164,21 @@ public class DBOMultiFlatSelect extends AbstractDBO
     /**
      * Unsupported method for this IDBO.
      *
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.lang.Object,
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeIn(java.lang.Object,
      *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object input, Connection conn, Map<String, Object> props) throws DBOException
+    public void executeIn(Object input, Connection conn, Map<String, Object> props) throws DBOException
     {
         prepare();
-        throw new DBOException("Unsupported method - DBOFlatSelect::execute(Object, Connection, Map)");
+        throw new DBOException("Unsupported method - DBOFlatSelect::executeIn(Object, Connection, Map)");
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream dataOut, Connection conn, Map<String, Object> props) throws DBOException
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException
     {
         FileWriter fw = null;
         try {
@@ -210,8 +208,9 @@ public class DBOMultiFlatSelect extends AbstractDBO
                     String expandedSQL = PropertiesHandler.expand(stmt, localProps, null, conn);
                     Statement sqlStatement = null;
                     try {
-                        sqlStatement = getInternalConn(conn).createStatement();
+                        sqlStatement = getInternalConn(conn, localProps).createStatement();
                         logger.debug("Executing select:\n" + expandedSQL);
+                        sqlStatementInfo = new StatementInfo(id, expandedSQL, sqlStatement);
                         ResultSet rs = sqlStatement.executeQuery(expandedSQL);
                         if (rs != null) {
                             try {
@@ -330,30 +329,30 @@ public class DBOMultiFlatSelect extends AbstractDBO
                         sbRowLength = Math.max(sbRowLength, sb.length());
                     }
                     finally {
-                        if (sqlStatement != null) {
+                    	if (this.sqlStatementInfo != null) {
                             try {
-                                sqlStatement.close();
+                            	this.sqlStatementInfo.close();
                             }
                             catch (Exception exc) {
                                 // do nothing
                             }
+                            this.sqlStatementInfo = null;
                             sqlStatement = null;
                         }
                     }
                 }
             }
-            if (fw == null) {
-                Charset cs = Charset.forName(encoding);
-                ByteBuffer bb = cs.encode(CharBuffer.wrap(sb));
-                //dataOut.write(bb.array());
-                dataOut.write(bb.array(), 0, sb.length()); // da verificare!!!
-                dataOut.flush();
-            }
 
             dhr.setRead(rowCounter);
             dhr.setTotal(rowCounter);
 
-            logger.debug("End execution of DB data read through " + dboclass);
+            logger.debug("End execution of DB data read through " + this.dboclass);
+            if (fw == null) {
+                Charset cs = Charset.forName(this.encoding);
+                ByteBuffer bb = cs.encode(CharBuffer.wrap(sb));
+                return new String(bb.array(), 0, sb.length());
+            }
+            return null;
         }
         catch (SQLException exc) {
             OracleExceptionHandler.handleSQLException(exc);

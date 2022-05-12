@@ -66,7 +66,7 @@ public interface IDBOBuilder
      * @param params
      * @throws DataHandlerException
      */
-    public void XML2DB(String operation, byte[] file, Map<String, Object> params) throws DataHandlerException, 
+    public void XML2DB(String operation, Object object, Map<String, Object> params) throws DataHandlerException,
             InterruptedException;
 
     /**
@@ -76,7 +76,7 @@ public interface IDBOBuilder
      * @return the result of data handling
      * @throws DataHandlerException
      */
-    public byte[] DB2XML(String operation, byte[] file, Map<String, Object> params) throws DataHandlerException, 
+    public Object DB2XML(String operation, Object object, Map<String, Object> params) throws DataHandlerException,
             InterruptedException;
 
     /**
@@ -86,7 +86,7 @@ public interface IDBOBuilder
      * @return the result of data handling
      * @throws DataHandlerException
      */
-    public byte[] CALL(String operation, byte[] file, Map<String, Object> params) throws DataHandlerException, 
+    public Object CALL(String operation, Object object, Map<String, Object> params) throws DataHandlerException,
             InterruptedException;
 
     /**

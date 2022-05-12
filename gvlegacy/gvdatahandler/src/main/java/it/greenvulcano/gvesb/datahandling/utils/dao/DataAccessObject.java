@@ -240,8 +240,22 @@ public final class DataAccessObject
         DHFactoryPool pool = DHFactoryPool.instance();
         try {
             dhf = pool.getDHFactory(service);
-            out = dhf.getDBOBuilder(service).DB2XML(service, input, locParams);
-        }
+            Object output = dhf.getDBOBuilder(service).DB2XML(service, input, locParams);
+            if (output instanceof byte[]) {
+            	out = (byte[]) output;
+            }
+            else if (output instanceof String) {
+            	out = ((String) output).getBytes();
+            }
+            else if (output instanceof Node) {
+            	out = XMLUtils.serializeDOMToByteArray_S((Node) output);
+            }
+            else {
+            	out = output.toString().getBytes();
+            }
+        } catch (XMLUtilsException exc) {
+			throw new DataHandlerException("Errore convertin XML to bytes", exc);
+		}
         finally {
             pool.releaseDHFactory(dhf);
         }
@@ -304,8 +318,22 @@ public final class DataAccessObject
         DHFactoryPool pool = DHFactoryPool.instance();
         try {
             dhf = pool.getDHFactory(service);
-            out = dhf.getDBOBuilder(service).CALL(service, input, locParams);
-        }
+            Object output = dhf.getDBOBuilder(service).CALL(service, input, locParams);
+            if (output instanceof byte[]) {
+            	out = (byte[]) output;
+            }
+            else if (output instanceof String) {
+            	out = ((String) output).getBytes();
+            }
+            else if (output instanceof Node) {
+            	out = XMLUtils.serializeDOMToByteArray_S((Node) output);
+            }
+            else {
+            	out = output.toString().getBytes();
+            }
+        } catch (XMLUtilsException exc) {
+			throw new DataHandlerException("Errore convertin XML to bytes", exc);
+		}
         finally {
             pool.releaseDHFactory(dhf);
         }

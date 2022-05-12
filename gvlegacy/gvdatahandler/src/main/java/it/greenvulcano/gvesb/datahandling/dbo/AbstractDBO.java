@@ -22,7 +22,6 @@ package it.greenvulcano.gvesb.datahandling.dbo;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.math.RoundingMode;
 import java.sql.Connection;
@@ -144,6 +143,7 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
     private String                jdbcConnectionName      = null;
 
     private String                jdbcConnectionNameInt   = null;
+    private String                currentJdbcConnectionNameInt   = null;
 
     /**
      *
@@ -179,6 +179,8 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
      * Internal connection to DB to prepare the correct statement.
      */
     private Connection            internalConn;
+
+    protected long timeConn = 0;
 
     /**
      * Properties to substitute in the statement meta-data bound to single
@@ -578,6 +580,7 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
             ignoreInput = XMLConfig.getBoolean(config, "@ignore-input", false);
             forcedMode = XMLConfig.get(config, "@force-mode", MODE_CALLER);
             jdbcConnectionNameInt = XMLConfig.get(config, "@jdbc-connection-name", "default");
+            currentJdbcConnectionNameInt = jdbcConnectionNameInt;
             inputDataName = XMLConfig.get(config, "@input-data", name + "-Input");
             outputDataName = XMLConfig.get(config, "@output-data", name + "-Output");
             logger.debug("Initializing [" + dboclass + "] with name [" + name + "] and transformation ["
@@ -654,18 +657,15 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
         }
     }
 
-    public void execute(Object input, Connection conn, Map<String, Object> props) throws DBOException, InterruptedException {
-    	execute(input, conn, props, null);
-    }
-    
+  
     /**
-     * @see it.greenvulcano.gvesb.datahandling.IDBO#execute(java.lang.Object,
+     * @see it.greenvulcano.gvesb.datahandling.IDBO#executeIn(java.lang.Object,
      *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object input, Connection conn, Map<String, Object> props, Object object) throws DBOException, 
+    public void executeIn(Object input, Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
-    	currentObject = object;
+    	currentObject = input;
         try {
             prepare();
             logger.debug("Begin execution of DB data read/update through " + dboclass);
@@ -683,13 +683,11 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
             }
             resultMessage = new StringBuffer();
             resultStatus = STATUS_OK;
-            internalConn = conn;
-            if (!jdbcConnectionNameInt.equals("default")) {
-                logger.debug("Overwriting default Connection with: " + jdbcConnectionNameInt);
-                internalConn = JDBCConnectionBuilder.getConnection(jdbcConnectionNameInt);
-            }
-            currentProps = buildProps(props);
-            logProps(currentProps);
+
+            this.currentProps = buildProps(props);
+            logProps(this.currentProps);
+
+            getInternalConn(conn, this.currentProps);
 
             if (ignoreInput) {
                 input = null;
@@ -795,11 +793,10 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.IDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.IDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream data, Connection conn, Map<String, Object> props) throws DBOException, 
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException, 
             InterruptedException {
         try {
             prepare();
@@ -816,13 +813,16 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
             if (call_DEFAULT_DEC_SEPARATOR == null) {
                 call_DEFAULT_DEC_SEPARATOR = DEFAULT_DEC_SEPARATOR;
             }
-            internalConn = conn;
-            currentProps = buildProps(props);
-            logProps(currentProps);
+
+            this.currentProps = buildProps(props);
+            logProps(this.currentProps);
+
+            getInternalConn(conn, this.currentProps);
 
             getStatement(null);
             executeStatement();
             logger.debug("End execution of DB data read/update through " + dboclass);
+            return null;
         }
         catch (Exception exc) {
             logger.error("Error on execution of " + dboclass + " with name [" + name + "]", exc);
@@ -840,14 +840,14 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.IDBO#execute(java.lang.Object,
-     *      java.io.OutputStream, java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.IDBO#executeInOut(java.lang.Object,
+     *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object dataIn, OutputStream dataOut, Connection conn, Map<String, Object> props)
+    public Object executeInOut(Object dataIn, Connection conn, Map<String, Object> props)
             throws DBOException, InterruptedException {
         prepare();
-        throw new DBOException("Unsupported method - DBOxxx::execute(InputStream, OutputStream, Connection, Map)");
+        throw new DBOException("Unsupported method - DBOxxx::executeInOut(Object, Connection, Map)");
     }
 
     /**
@@ -906,6 +906,7 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
      */
     protected void prepare()
     {
+        currentJdbcConnectionNameInt = jdbcConnectionNameInt;
         internalConn = null;
         dhr.reset();
         resetRowCounter();
@@ -935,6 +936,7 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
         if (!jdbcConnectionNameInt.equals("default")) {
             try {
                 JDBCConnectionBuilder.releaseConnection(jdbcConnectionNameInt, internalConn);
+                currentJdbcConnectionNameInt = jdbcConnectionNameInt;
                 internalConn = null;
             }
             catch (Exception exc) {
@@ -1023,8 +1025,8 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
     protected String dumpCurrentRowFields()
     {
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < currentRowFields.size(); i++) {
-            sb.append("Field(").append(i).append(") value: [").append(currentRowFields.elementAt(i)).append("]\n");
+        for (int i = 0; i < currentRowFields.size(); i++) {
+            sb.append("Field(").append(i + 1).append(") value: [").append(currentRowFields.elementAt(i)).append("]\n");
         }
         sb.append("XSL Message: ").append(currentXSLMessage).append("\n\n");
         return sb.toString();
@@ -1198,17 +1200,25 @@ public abstract class AbstractDBO extends DefaultHandler implements IDBO
      * @return the internal connection
      * @throws Exception
      */
-    protected Connection getInternalConn(Connection conn) throws Exception
+    protected Connection getInternalConn(Connection conn, Map<String, Object> props) throws Exception
     {
         if (internalConn == null) {
             internalConn = conn;
-            if (!jdbcConnectionNameInt.equals("default")) {
-                logger.debug("Overwriting default Connection with: " + jdbcConnectionNameInt);
-                internalConn = JDBCConnectionBuilder.getConnection(jdbcConnectionNameInt);
+            if (!currentJdbcConnectionNameInt.equals("default")) {
+            	currentJdbcConnectionNameInt = PropertiesHandler.expand(currentJdbcConnectionNameInt, props);
+                logger.info("Overwriting default Connection with: " + currentJdbcConnectionNameInt);
+                long startConn = System.currentTimeMillis();
+                internalConn = JDBCConnectionBuilder.getConnection(currentJdbcConnectionNameInt);
+                timeConn = System.currentTimeMillis() - startConn;
             }
         }
 
-        return internalConn;
+        return this.internalConn;
+    }
+
+    @Override
+    public long getTimeConn() {
+    	return timeConn;
     }
 
     /**

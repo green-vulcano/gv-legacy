@@ -19,15 +19,7 @@
  *******************************************************************************/
 package it.greenvulcano.gvesb.datahandling.dbo;
 
-import it.greenvulcano.configuration.XMLConfig;
-import it.greenvulcano.gvesb.datahandling.DBOException;
-import it.greenvulcano.gvesb.datahandling.utils.FieldFormatter;
-import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptionHandler;
-import it.greenvulcano.util.metadata.PropertiesHandler;
-import it.greenvulcano.util.thread.ThreadUtils;
-
 import java.io.FileWriter;
-import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -46,6 +38,13 @@ import java.util.StringTokenizer;
 import org.slf4j.Logger;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.datahandling.DBOException;
+import it.greenvulcano.gvesb.datahandling.utils.FieldFormatter;
+import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptionHandler;
+import it.greenvulcano.util.metadata.PropertiesHandler;
+import it.greenvulcano.util.thread.ThreadUtils;
 
 /**
  * IDBO Class specialized in selecting data from the DB.
@@ -83,8 +82,9 @@ public class DBOFlatSelect extends AbstractDBO
             endLine = XMLConfig.get(config, "@end-line", DEFAULT_END_LINE);
             encoding = XMLConfig.get(config, "@encoding", DEFAULT_ENCODING);
             forcedMode = XMLConfig.get(config, "@force-mode", MODE_DB2XML);
-            isReturnData = XMLConfig.getBoolean(config, "@return-data", true);
             directFilePath = XMLConfig.get(config, "@direct-file-path", null);
+            isReturnData = directFilePath == null;
+
             Node stmt = XMLConfig.getNode(config, "statement[@type='select']");
             if (stmt == null) {
                 throw new DBOException("Empty/misconfigured statements list for [" + getName() + "/" + dboclass + "]");
@@ -140,22 +140,21 @@ public class DBOFlatSelect extends AbstractDBO
     /**
      * Unsupported method for this IDBO.
      *
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.lang.Object,
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeIn(java.lang.Object,
      *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object input, Connection conn, Map<String, Object> props) throws DBOException
+    public void executeIn(Object input, Connection conn, Map<String, Object> props) throws DBOException
     {
         prepare();
-        throw new DBOException("Unsupported method - DBOFlatSelect::execute(Object, Connection, Map)");
+        throw new DBOException("Unsupported method - DBOFlatSelect::executeIn(Object, Connection, Map)");
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream dataOut, Connection conn, Map<String, Object> props) throws DBOException,
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
         FileWriter fw = null;
         try {
@@ -178,8 +177,9 @@ public class DBOFlatSelect extends AbstractDBO
                 String expandedSQL = PropertiesHandler.expand(statement, localProps, null, conn);
                 Statement sqlStatement = null;
                 try {
-                    sqlStatement = getInternalConn(conn).createStatement();
+                    sqlStatement = getInternalConn(conn, localProps).createStatement();
                     logger.debug("Executing select:\n" + expandedSQL);
+                    sqlStatementInfo = new StatementInfo("0", expandedSQL, sqlStatement);
                     ResultSet rs = sqlStatement.executeQuery(expandedSQL);
                     if (rs != null) {
                         try {
@@ -297,32 +297,30 @@ public class DBOFlatSelect extends AbstractDBO
                     }
                 }
                 finally {
-                    if (sqlStatement != null) {
+                    if (this.sqlStatementInfo != null) {
                         try {
-                            sqlStatement.close();
+                           this.sqlStatementInfo.close();
                         }
                         catch (Exception exc) {
                             // do nothing
                         }
+                        sqlStatementInfo = null;
                         sqlStatement = null;
                     }
                 }
             }
             sbRowLength = sb.length();
 
+            dhr.setRead(this.rowCounter);
+            dhr.setTotal(this.rowCounter);
 
+            logger.debug("End execution of DB data read through " + this.dboclass);
             if (fw == null) {
-                Charset cs = Charset.forName(encoding);
+                Charset cs = Charset.forName(this.encoding);
                 ByteBuffer bb = cs.encode(CharBuffer.wrap(sb));
-                //dataOut.write(bb.array());
-                dataOut.write(bb.array(), 0, sb.length()); // da verificare!!!
-                dataOut.flush();
+                return new String(bb.array(), 0, sb.length());
             }
-
-            dhr.setRead(rowCounter);
-            dhr.setTotal(rowCounter);
-
-            logger.debug("End execution of DB data read through " + dboclass);
+            return null;
         }
         catch (SQLException exc) {
             OracleExceptionHandler.handleSQLException(exc);

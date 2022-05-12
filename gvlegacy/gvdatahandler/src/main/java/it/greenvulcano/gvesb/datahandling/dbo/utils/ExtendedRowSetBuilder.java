@@ -19,11 +19,6 @@
  *******************************************************************************/
 package it.greenvulcano.gvesb.datahandling.dbo.utils;
 
-import it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO;
-import it.greenvulcano.gvesb.datahandling.utils.FieldFormatter;
-import it.greenvulcano.util.thread.ThreadUtils;
-import it.greenvulcano.util.xml.XMLUtils;
-
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.Reader;
@@ -34,6 +29,7 @@ import java.sql.Clob;
 import java.sql.NClob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -51,6 +47,11 @@ import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+
+import it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO;
+import it.greenvulcano.gvesb.datahandling.utils.FieldFormatter;
+import it.greenvulcano.util.thread.ThreadUtils;
+import it.greenvulcano.util.xml.XMLUtils;
 
 /**
  * 
@@ -420,7 +421,7 @@ public class ExtendedRowSetBuilder implements RowSetBuilder
         colNames = new String[rsm.getColumnCount() + 1];
 
         for (int i = 1; i < fFormatters.length; i++) {
-            String cName = rsm.getColumnLabel(i);
+            String cName = getColumnName(rsm, i);
             if (cName == null) {
                 cName = rsm.getColumnName(i);
             }
@@ -432,7 +433,15 @@ public class ExtendedRowSetBuilder implements RowSetBuilder
             fFormatters[i] = fF;
         }
     }
-    
+
+    protected String getColumnName(ResultSetMetaData rsm, int i) throws SQLException {
+        String cName = rsm.getColumnLabel(i);
+        if (cName == null) {
+            cName = rsm.getColumnName(i);
+        }
+        return cName;
+    }
+
     private String adaptName(String cName) {
         String res = "";
         for (int i = 0; i < cName.length(); i++) {

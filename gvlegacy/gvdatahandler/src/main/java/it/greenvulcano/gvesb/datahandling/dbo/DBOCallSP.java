@@ -36,7 +36,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Blob;
@@ -901,19 +900,18 @@ public class DBOCallSP extends AbstractDBO
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.lang.Object,
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeIn(java.lang.Object,
      *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object input, Connection conn, Map<String, Object> props) throws DBOException, 
+    public void executeIn(Object input, Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
-        dataOut = new ByteArrayOutputStream();
         try {
             createOutXML();
-            super.execute(input, conn, props);
-            storeResult();
+            super.executeIn(input, conn, props);
         }
         finally {
+            xmlOut = null;
             dhr.setRead(0);
             dhr.setTotal(0);
             dhr.setInsert(0);
@@ -923,19 +921,18 @@ public class DBOCallSP extends AbstractDBO
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream data, Connection conn, Map<String, Object> props) throws DBOException, 
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
-        dataOut = data;
         try {
             createOutXML();
-            super.execute((OutputStream) null, conn, props);
-            storeResult();
+            super.executeOut(conn, props);
+            return this.xmlOut;
         }
         finally {
+            xmlOut = null;
             dhr.setRead(0);
             dhr.setTotal(0);
             dhr.setInsert(0);
@@ -945,17 +942,18 @@ public class DBOCallSP extends AbstractDBO
     }
 
     /**
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.lang.Object,
-     *      java.io.OutputStream, java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeInOut(java.lang.Object,
+     *      java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(Object dataIn, OutputStream dataOut, Connection conn, Map<String, Object> props)
+    public Object executeInOut(Object dataIn, Connection conn, Map<String, Object> props)
             throws DBOException, InterruptedException {
-        this.dataOut = dataOut;
         try {
             createOutXML();
-            super.execute(dataIn, conn, props);
-            storeResult();
+            super.executeIn(dataIn, conn, props);
+            return XMLUtils.serializeDOM_S(this.xmlOut);
+        } catch (XMLUtilsException exc) {
+            throw new DBOException("Cannot store DBOCallSP XML result.", exc);
         }
         finally {
             dhr.setRead(0);
@@ -964,29 +962,6 @@ public class DBOCallSP extends AbstractDBO
             dhr.setUpdate(0);
             dhr.setDiscard(0);
         }
-    }
-
-    /**
-     * @throws DBOException
-     * 
-     */
-    private void storeResult() throws DBOException
-    {
-        if (dataOut != null) {
-            XMLUtils xml = null;
-            try {
-                xml = XMLUtils.getParserInstance();
-                byte[] dataDOM = xml.serializeDOMToByteArray(xmlOut);
-                dataOut.write(dataDOM);
-            }
-            catch (Exception exc) {
-                throw new DBOException("Cannot store DBOCallSP result.", exc);
-            }
-            finally {
-                XMLUtils.releaseParserInstance(xml);
-            }
-        }
-        xmlOut = null;
     }
 
     /**
@@ -1045,8 +1020,6 @@ public class DBOCallSP extends AbstractDBO
     private StringBuffer          textBuffer;
 
     private boolean               colDataExpecting;
-
-    private OutputStream          dataOut;
 
     private String                currentUUID;
 
@@ -1107,7 +1080,6 @@ public class DBOCallSP extends AbstractDBO
     {
         if (ROW_NAME.equals(localName)) {
             currentRowFields.clear();
-            currentRowFields.add(null);
             colDataExpecting = false;
             colIdx = 0;
             String id = attributes.getValue(uri, ID_NAME);

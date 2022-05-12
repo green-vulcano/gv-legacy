@@ -26,7 +26,6 @@ import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptio
 import it.greenvulcano.util.txt.TextUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -103,14 +102,13 @@ public class DBOUpdate extends AbstractDBO
     /**
      * Unsupported method for this IDBO.
      *
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream data, Connection conn, Map<String, Object> props) throws DBOException,
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
         prepare();
-        throw new DBOException("Unsupported method - DBOUpdate::execute(OutputStream, Connection, Map)");
+        throw new DBOException("Unsupported method - DBOUpdate::executeOut(Connection, Map)");
     }
 
     private int          colIdx = 0;
@@ -230,8 +228,8 @@ public class DBOUpdate extends AbstractDBO
                 dhr.addDiscardCause(new DiscardCause(rowCounter, msg));
 
                 resultMessage.append("Data error on row ").append(rowCounter).append(": ").append(msg);
-                resultMessage.append(" SQL Statement Informations:\n").append(sqlStatementInfo);
-                resultMessage.append(" Record parameters:\n").append(dumpCurrentRowFields());
+                resultMessage.append("SQL Statement Informations:\n").append(sqlStatementInfo);
+                resultMessage.append("Record parameters:\n").append(dumpCurrentRowFields());
                 resultStatus = STATUS_PARTIAL;
             }
         }

@@ -29,7 +29,6 @@ import it.greenvulcano.util.thread.ThreadUtils;
 import it.greenvulcano.util.txt.TextUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -145,14 +144,13 @@ public class DBOInsertOrUpdate extends AbstractDBO
     /**
      * Unsupported method for this IDBO.
      *
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream data, Connection conn, Map<String, Object> props) throws DBOException,
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
         prepare();
-        throw new DBOException("Unsupported method - DBOInsertOrUpdate::execute(OutputStream, Connection, HashMap)");
+        throw new DBOException("Unsupported method - DBOInsertOrUpdate::execute(Connection, HashMap)");
     }
 
     /**
@@ -246,11 +244,8 @@ public class DBOInsertOrUpdate extends AbstractDBO
     {
         if (ROW_NAME.equals(localName)) {
             currentRowFields.clear();
-            currentRowFields.add(null);
             currentInsertRowFields.clear();
-            currentInsertRowFields.add(null);
             currentUpdateRowFields.clear();
-            currentUpdateRowFields.add(null);
             colDataExpecting = false;
             colIdx = 0;
             colUpdIdx = 0;
@@ -353,7 +348,7 @@ public class DBOInsertOrUpdate extends AbstractDBO
                         logger.error("Record insert parameters:\n" + dumpCurrentRowFields());
                         logger.error("SQL Statement Informations:\n" + sqlStatementInfo);
                         logger.error("SQLException configured as blocking error for service '" + serviceName
-                                + "' alla riga " + Long.toString(rowCounter) + ".", exc);
+                                + "' at row " + Long.toString(rowCounter) + ".", exc);
                         throw new SAXException(new DBOException(
                                 "SQLException configured as blocking error class on row " + rowCounter + ": "
                                         + exc.getMessage(), exc));
@@ -619,8 +614,8 @@ public class DBOInsertOrUpdate extends AbstractDBO
     protected String dumpCurrentRowFields()
     {
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < localCurrentRowFields.size(); i++) {
-            sb.append("Field(").append(i).append(") value: [").append(localCurrentRowFields.elementAt(i)).append(
+        for (int i = 0; i < localCurrentRowFields.size(); i++) {
+            sb.append("Field(").append(i + 1).append(") value: [").append(localCurrentRowFields.elementAt(i)).append(
                     "]\n");
         }
         sb.append("XSL Message: ").append(currentXSLMessage).append("\n\n");

@@ -26,7 +26,6 @@ import it.greenvulcano.gvesb.datahandling.utils.exchandler.oracle.OracleExceptio
 import it.greenvulcano.util.txt.TextUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -103,14 +102,13 @@ public class DBOInsert extends AbstractDBO
     /**
      * Unsupported method for this IDBO.
      *
-     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#execute(java.io.OutputStream,
-     *      java.sql.Connection, java.util.Map)
+     * @see it.greenvulcano.gvesb.datahandling.dbo.AbstractDBO#executeOut(java.sql.Connection, java.util.Map)
      */
     @Override
-    public void execute(OutputStream data, Connection conn, Map<String, Object> props) throws DBOException,
+    public Object executeOut(Connection conn, Map<String, Object> props) throws DBOException,
             InterruptedException {
         prepare();
-        throw new DBOException("Unsupported method - DBOInsert::execute(OutputStream, Connection, HashMap)");
+        throw new DBOException("Unsupported method - DBOInsert::execute(Connection, HashMap)");
     }
 
     private int          colIdx = 0;
@@ -155,6 +153,10 @@ public class DBOInsert extends AbstractDBO
                 currentRowFields.add(null);
             }
             currentXSLMessage = attributes.getValue(XSL_MSG_NAME);
+            String statsOn = attributes.getValue(uri, STATS_ON_NAME);
+            statsOnInsert = !(STATS_UPD_MODE.equals(statsOn));
+            String incrDisc = attributes.getValue(uri, INCR_DISC_NAME);
+            incrDiscIfUpdKO = !(INCR_DISC_N_MODE.equals(incrDisc));
             currCriticalError = "true".equalsIgnoreCase(attributes.getValue(CRITICAL_ERROR));
             generatedKeyID = attributes.getValue("generate-key");
             resetGeneratedKeyID = attributes.getValue("reset-generate-key");
