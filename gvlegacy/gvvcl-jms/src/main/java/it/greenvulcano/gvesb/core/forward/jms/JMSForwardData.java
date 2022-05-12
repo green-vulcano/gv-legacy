@@ -592,7 +592,7 @@ public class JMSForwardData
     public void stopListener(JMSForwardListener jmsFwd)
     {
         if (pool != null) {
-            pool.rescheduleListeners(jmsFwd);
+            pool.rescheduleListeners();
         }
     }
 

@@ -19,13 +19,8 @@
  */
 package it.greenvulcano.gvesb.core.forward;
 
-import it.greenvulcano.configuration.XMLConfig;
-import it.greenvulcano.gvesb.core.forward.jms.JMSForwardData;
-import it.greenvulcano.gvesb.core.forward.jms.JMSForwardListenerPool;
-import it.greenvulcano.gvesb.core.forward.preprocess.ValidatorManager;
-import it.greenvulcano.log.NMDC;
-import it.greenvulcano.util.xpath.XPathFinder;
-
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,6 +28,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import it.greenvulcano.configuration.XMLConfig;
+import it.greenvulcano.gvesb.core.forward.jms.JMSForwardData;
+import it.greenvulcano.gvesb.core.forward.jms.JMSForwardListenerPool;
+import it.greenvulcano.gvesb.core.forward.preprocess.ValidatorManager;
+import it.greenvulcano.log.NMDC;
+import it.greenvulcano.util.xpath.XPathFinder;
 
 /**
  * @version 4.0.0 15/mar/2018
@@ -54,6 +56,37 @@ public class JMSForwardManager {
     private final static ConcurrentMap<String, JMSForwardListenerPool> jmsListeners = new ConcurrentHashMap<>();
    
     private final static AtomicBoolean running = new AtomicBoolean(false);
+    private static Timer poolRefresherTimer = null;
+    private static long refreshInterval = 5 * 60 * 1000;
+
+    /*
+	 * Check if a listener pool have a minimum number of active listeners
+	 */
+    private static class ListenerPoolRefresher extends TimerTask {
+        @Override
+        public void run() {
+        	NMDC.push();
+            NMDC.clear();
+            NMDC.setSubSystem(JMSForwardData.SUBSYSTEM);
+            try {
+                logger.debug("BEGIN - Refreshing JMSForwardListenerPools");
+                for (JMSForwardListenerPool pool : JMSForwardManager.jmsListeners.values()) {
+                    String forwardName = pool.getName() + "/" + pool.getForwardName();
+                    logger.debug("Refreshing JMSForwardListenerPool[" + forwardName + "]");
+                    try {
+                        pool.rescheduleListeners();
+                    }
+                    catch (Exception exc) {
+                        logger.error("Error refreshing JMSForwardListenerPool[" + forwardName + "]", exc);
+                    }
+                }
+                logger.debug("END - Refreshing JMSForwardListenerPools");
+        	}
+            finally {
+                NMDC.pop();
+            }
+        }
+    }
 
     private JMSForwardManager() {        
     }
@@ -71,6 +104,8 @@ public class JMSForwardManager {
 	       
 	        NMDC.setSubSystem(JMSForwardData.SUBSYSTEM);
 	        try {
+	            refreshInterval = XMLConfig.getLong(JMS_FORWARD_FILE_NAME, "/GVForwards/@refresh-interval-min", 5) * 60 * 1000; // every 5 minutes
+
 	            NodeList nl = XMLConfig.getNodeList(JMS_FORWARD_FILE_NAME,
 	                    "/GVForwards/ForwardConfiguration[@enabled='true']");
 	            for (int i = 0; i < nl.getLength(); i++) {
@@ -81,6 +116,9 @@ public class JMSForwardManager {
 	                logger.debug("Configured JMSForwardListenerPool[" + jmsLP.getName() + "/" + jmsLP.getForwardName() + "]");
 	               
 	            }
+
+	            poolRefresherTimer = new Timer("JMSForwardManager#ListenerPoolRefresher", true);
+	            poolRefresherTimer.schedule(new ListenerPoolRefresher(), refreshInterval, refreshInterval);
 	        }  catch (Exception exc) {
 	            logger.error("Error initializing JMSForwardManager", exc);
 	            
@@ -100,11 +138,13 @@ public class JMSForwardManager {
 	        NMDC.setSubSystem(JMSForwardData.SUBSYSTEM);
 	        try {
 	            logger.debug("BEGIN - Destroing JMSForwardManager");
+	            poolRefresherTimer.cancel();
+	            poolRefresherTimer = null;
+
 	            ValidatorManager.instance().reset();
 	            for (JMSForwardListenerPool pool : jmsListeners.values()) {
 	                String forwardName = pool.getName() + "/" + pool.getForwardName();
 	                try {
-	                  
 	                    pool.destroy();
 	                }
 	                catch (Exception exc) {
