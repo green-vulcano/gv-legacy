@@ -127,6 +127,11 @@ public class DBOCallSP extends AbstractDBO
             private int     precision          = 0;
 
             /**
+             * If INOUT, set to NULL
+             */
+            private boolean setNULL            = false;
+
+            /**
              * Return the value in properties map.
              */
             private boolean returnInProperties = false;
@@ -158,6 +163,7 @@ public class DBOCallSP extends AbstractDBO
                     precision = XMLConfig.getInteger(node, "@precision", 0);
                     returnInProperties = XMLConfig.getBoolean(node, "@return-in-prop", false);
                     returnInUUID = XMLConfig.getBoolean(node, "@return-in-uuid", false);
+                    setNULL = XMLConfig.getBoolean(node, "@set-null", false);
                     propName = XMLConfig.get(node, "@prop-name", "" + position);
                     paramName = XMLConfig.get(node, "@param-name", "");
                 }
@@ -230,6 +236,18 @@ public class DBOCallSP extends AbstractDBO
             }
 
             /**
+             * Set if the INOUT parameter should be set as NULL.<br/>
+             * <br/>
+             *
+             * @param setNULL
+             *        The value to set.
+             */
+            public void setNULL(boolean setNULL)
+            {
+                this.setNULL = setNULL;
+            }
+
+            /**
              * Get the dbtype attribute.<br/>
              * <br/>
              * 
@@ -271,6 +289,17 @@ public class DBOCallSP extends AbstractDBO
             public int getPrecision()
             {
                 return precision;
+            }
+
+            /**
+             * Get if the INOUT parameter should be set as NULL.<br/>
+             * <br/>
+             *
+             * @return the setNULL flag
+             */
+            public boolean getSetNULL()
+            {
+                return this.setNULL;
             }
 
             /**
@@ -390,39 +419,73 @@ public class DBOCallSP extends AbstractDBO
                     String type = outp.getDBType().trim();
                     int iPos = outp.getPosition();
                     int iPrec = outp.getPrecision();
+                    boolean setNull = outp.getSetNULL();
                     logger.debug("Parameter Output[" + (i + 1) + "] Type [" + type + "] Position [" + iPos
-                            + "] Precision [" + iPrec + "]...");
+                            + "] Precision [" + iPrec + "] SetNull [" + setNull + "]...");
 
                     if (type.equalsIgnoreCase(ParameterType.ORACLE_STRING)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.VARCHAR);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.VARCHAR);
+                        }
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_INT)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.INTEGER);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.INTEGER);
+                        }
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_LONG)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.BIGINT);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.BIGINT);
+                        }
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_NUM)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.NUMERIC, iPrec);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.NUMERIC);
+                        }
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_DATE)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.DATE);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.DATE);
+                        }
                     }  else if (type.equalsIgnoreCase(ParameterType.ORACLE_TIMESTAMP)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.TIMESTAMP);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.TIMESTAMP);
+                        }
                     } else if (type.equalsIgnoreCase(ParameterType.ORACLE_TIMESTAMP_WITH_TZ)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+                        }
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_LONG_RAW)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.LONGVARBINARY);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.LONGVARBINARY);
+                        }
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_CLOB)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.CLOB);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.CLOB);
+                        }
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_BLOB)) {
                         callStmt.registerOutParameter(iPos, java.sql.Types.BLOB);
+                        if (setNull) {
+                        	callStmt.setNull(iPos, java.sql.Types.BLOB);
+                        }
                     }
                     else if (type.equalsIgnoreCase(ParameterType.ORACLE_CURSOR)) {
                         callStmt.registerOutParameter(iPos, -10); // OracleTypes.CURSOR
+                        if (setNull) {
+                        	callStmt.setNull(iPos, -10);
+                        }
                     }
                     else {
                         logger.error("specifyOutputParameter - "
@@ -467,7 +530,30 @@ public class DBOCallSP extends AbstractDBO
                         Object value = null;
 
                         if (javaType.equalsIgnoreCase(ParameterType.JAVA_STRING)) {
-                            if (dbType.equalsIgnoreCase(ParameterType.ORACLE_DATE)) {
+                        	if (dbType.equalsIgnoreCase(ParameterType.ORACLE_INT)) {
+                                int vn = namedParameterMode
+                                        ? callStmt.getInt(paramName)
+                                        : callStmt.getInt(iPos);
+                        		value = String.valueOf(vn);
+                            }
+                            else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_LONG)) {
+                                long vn = namedParameterMode
+                                        ? callStmt.getLong(paramName)
+                                        : callStmt.getLong(iPos);
+                        		value = String.valueOf(vn);
+                            }
+                            else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_NUM)) {
+                            	BigDecimal vn = namedParameterMode
+                                        ? callStmt.getBigDecimal(paramName)
+                                        : callStmt.getBigDecimal(iPos);
+                                if (vn == null){
+                                	value = "";
+                                }
+                                else {
+                                	value = String.valueOf(vn.longValue());
+                                }
+                            }
+                            else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_DATE)) {
                                 String format = outp.getJavaTypeFormat();
                                 if (format.equals("")) {
                                     format = DEFAULT_DATE_FORMAT;
@@ -629,7 +715,33 @@ public class DBOCallSP extends AbstractDBO
                         Element col = xml.createElement(xmlOut, COL_NAME);
                         xml.setAttribute(col, ID_NAME, propName);
                         if (javaType.equalsIgnoreCase(ParameterType.JAVA_STRING)) {
-                            if (dbType.equalsIgnoreCase(ParameterType.ORACLE_DATE)) {
+                        	if (dbType.equalsIgnoreCase(ParameterType.ORACLE_INT)) {
+                                int vn = namedParameterMode
+                                        ? callStmt.getInt(paramName)
+                                        : callStmt.getInt(iPos);
+                        		value = String.valueOf(vn);
+                                xml.setAttribute(col, TYPE_NAME, STRING_TYPE);
+                            }
+                            else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_LONG)) {
+                                long vn = namedParameterMode
+                                        ? callStmt.getLong(paramName)
+                                        : callStmt.getLong(iPos);
+                        		value = String.valueOf(vn);
+                                xml.setAttribute(col, TYPE_NAME, STRING_TYPE);
+                            }
+                            else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_NUM)) {
+                            	BigDecimal vn = namedParameterMode
+                                        ? callStmt.getBigDecimal(paramName)
+                                        : callStmt.getBigDecimal(iPos);
+                                if (vn == null){
+                                	value = "";
+                                }
+                                else {
+                                	value = String.valueOf(vn.longValue());
+                                }
+                                xml.setAttribute(col, TYPE_NAME, STRING_TYPE);
+                            }
+                            else if (dbType.equalsIgnoreCase(ParameterType.ORACLE_DATE)) {
                                 String format = outp.getJavaTypeFormat();
                                 if (format.equals("")) {
                                     format = DEFAULT_DATE_FORMAT;

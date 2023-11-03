@@ -409,6 +409,7 @@ public class ExtendedRowSetBuilder implements RowSetBuilder
         copy.decSeparator = this.decSeparator;
         copy.parser = this.parser;
         copy.dateFormatter = this.dateFormatter;
+        copy.timeFormatter = this.timeFormatter;
         copy.numberFormatter = this.numberFormatter;
 
         return copy;
